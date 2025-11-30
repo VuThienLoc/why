@@ -1,0 +1,174 @@
+import { ROLE_CODES } from "./roles.constant.js";
+
+export const PRIVILEGE_CODES = {
+  // Test Order Privileges
+  READ_TEST_ORDER: "read:test_order",
+  CREATE_TEST_ORDER: "create:test_order",
+  UPDATE_TEST_ORDER: "update:test_order",
+  DELETE_TEST_ORDER: "delete:test_order",
+
+  // Comment Privileges
+  ADD_COMMENT: "add:comment",
+  UPDATE_COMMENT: "update:comment",
+  DELETE_COMMENT: "delete:comment",
+
+  // Configuration Privileges
+  READ_CONFIGURATION: "read:configuration",
+  CREATE_CONFIGURATION: "create:configuration",
+  UPDATE_CONFIGURATION: "update:configuration",
+  DELETE_CONFIGURATION: "delete:configuration",
+
+  // User Management Privileges
+  READ_USER: "read:user",
+  CREATE_USER: "create:user",
+  UPDATE_USER: "update:user",
+  DELETE_USER: "delete:user",
+
+  // Role Management Privileges
+  READ_ROLE: "read:role",
+  CREATE_ROLE: "create:role",
+  UPDATE_ROLE: "update:role",
+  DELETE_ROLE: "delete:role",
+
+  // System Privileges (for future use)
+  SYSTEM_ADMIN: "system:admin",
+} as const;
+
+export type PrivilegeCode =
+  (typeof PRIVILEGE_CODES)[keyof typeof PRIVILEGE_CODES];
+
+export const PRIVILEGE_DESCRIPTIONS: Record<PrivilegeCode, string> = {
+  // Test Order Descriptions
+  [PRIVILEGE_CODES.READ_TEST_ORDER]:
+    "Read-only access to view patient test orders and results",
+  [PRIVILEGE_CODES.CREATE_TEST_ORDER]: "Create a new patient test order",
+  [PRIVILEGE_CODES.UPDATE_TEST_ORDER]: "Modify an existing test order",
+  [PRIVILEGE_CODES.DELETE_TEST_ORDER]: "Delete an existing test order",
+
+  // Comment Descriptions
+  [PRIVILEGE_CODES.ADD_COMMENT]: "Add a new comment to a test result",
+  [PRIVILEGE_CODES.UPDATE_COMMENT]: "Modify an existing comment",
+  [PRIVILEGE_CODES.DELETE_COMMENT]: "Delete a comment",
+
+  // Configuration Descriptions
+  [PRIVILEGE_CODES.READ_CONFIGURATION]: "View system configurations",
+  [PRIVILEGE_CODES.CREATE_CONFIGURATION]: "Create new system configurations",
+  [PRIVILEGE_CODES.UPDATE_CONFIGURATION]:
+    "Modify existing system configurations",
+  [PRIVILEGE_CODES.DELETE_CONFIGURATION]: "Delete system configurations",
+
+  // User Management Descriptions
+  [PRIVILEGE_CODES.READ_USER]: "View all user profiles",
+  [PRIVILEGE_CODES.CREATE_USER]: "Create a new user account",
+  [PRIVILEGE_CODES.UPDATE_USER]: "Modify user account information",
+  [PRIVILEGE_CODES.DELETE_USER]: "Delete a user account",
+
+  // Role Management Descriptions
+  [PRIVILEGE_CODES.READ_ROLE]: "View all role privileges",
+  [PRIVILEGE_CODES.CREATE_ROLE]: "Create a new role",
+  [PRIVILEGE_CODES.UPDATE_ROLE]: "Modify role permissions",
+  [PRIVILEGE_CODES.DELETE_ROLE]: "Delete a role",
+
+  // System Descriptions
+  [PRIVILEGE_CODES.SYSTEM_ADMIN]: "Full system access",
+};
+
+// Default role to privilege mapping
+export const ROLE_PRIVILEGES: Record<string, PrivilegeCode[]> = {
+  [ROLE_CODES.ADMIN]: [
+    PRIVILEGE_CODES.READ_TEST_ORDER,
+    PRIVILEGE_CODES.CREATE_TEST_ORDER,
+    PRIVILEGE_CODES.UPDATE_TEST_ORDER,
+    PRIVILEGE_CODES.DELETE_TEST_ORDER,
+    PRIVILEGE_CODES.ADD_COMMENT,
+    PRIVILEGE_CODES.UPDATE_COMMENT,
+    PRIVILEGE_CODES.DELETE_COMMENT,
+    PRIVILEGE_CODES.READ_CONFIGURATION,
+    PRIVILEGE_CODES.CREATE_CONFIGURATION,
+    PRIVILEGE_CODES.UPDATE_CONFIGURATION,
+    PRIVILEGE_CODES.DELETE_CONFIGURATION,
+    PRIVILEGE_CODES.READ_USER,
+    PRIVILEGE_CODES.CREATE_USER,
+    PRIVILEGE_CODES.UPDATE_USER,
+    PRIVILEGE_CODES.DELETE_USER,
+    PRIVILEGE_CODES.READ_ROLE,
+    PRIVILEGE_CODES.CREATE_ROLE,
+    PRIVILEGE_CODES.UPDATE_ROLE,
+    PRIVILEGE_CODES.DELETE_ROLE,
+    PRIVILEGE_CODES.SYSTEM_ADMIN,
+  ],
+  [ROLE_CODES.MANAGER]: [
+    PRIVILEGE_CODES.READ_USER,
+    PRIVILEGE_CODES.CREATE_USER,
+    PRIVILEGE_CODES.UPDATE_USER,
+    PRIVILEGE_CODES.DELETE_USER,
+    PRIVILEGE_CODES.READ_ROLE,
+    PRIVILEGE_CODES.CREATE_ROLE,
+    PRIVILEGE_CODES.UPDATE_ROLE,
+    PRIVILEGE_CODES.DELETE_ROLE,
+  ],
+  [ROLE_CODES.SERVICE]: [
+    PRIVILEGE_CODES.READ_CONFIGURATION,
+    PRIVILEGE_CODES.CREATE_CONFIGURATION,
+    PRIVILEGE_CODES.UPDATE_CONFIGURATION,
+    PRIVILEGE_CODES.DELETE_CONFIGURATION,
+  ],
+  [ROLE_CODES.LAB_USER]: [
+    PRIVILEGE_CODES.READ_TEST_ORDER,
+    PRIVILEGE_CODES.CREATE_TEST_ORDER,
+    PRIVILEGE_CODES.UPDATE_TEST_ORDER,
+    PRIVILEGE_CODES.DELETE_TEST_ORDER,
+    PRIVILEGE_CODES.ADD_COMMENT,
+    PRIVILEGE_CODES.UPDATE_COMMENT,
+    PRIVILEGE_CODES.DELETE_COMMENT,
+  ],
+  [ROLE_CODES.USER]: [PRIVILEGE_CODES.READ_TEST_ORDER],
+};
+
+export const PRIVILEGE_CATEGORIES = {
+  TEST_ORDER: "Test Order",
+  COMMENT: "Comment",
+  CONFIGURATION: "Configuration",
+  USER_MANAGEMENT: "User Management",
+  ROLE_MANAGEMENT: "Role Management",
+  SYSTEM: "System",
+} as const;
+
+export const PRIVILEGES_BY_CATEGORY = {
+  [PRIVILEGE_CATEGORIES.TEST_ORDER]: [
+    PRIVILEGE_CODES.READ_TEST_ORDER,
+    PRIVILEGE_CODES.CREATE_TEST_ORDER,
+    PRIVILEGE_CODES.UPDATE_TEST_ORDER,
+    PRIVILEGE_CODES.DELETE_TEST_ORDER,
+  ],
+  [PRIVILEGE_CATEGORIES.COMMENT]: [
+    PRIVILEGE_CODES.ADD_COMMENT,
+    PRIVILEGE_CODES.UPDATE_COMMENT,
+    PRIVILEGE_CODES.DELETE_COMMENT,
+  ],
+  [PRIVILEGE_CATEGORIES.CONFIGURATION]: [
+    PRIVILEGE_CODES.READ_CONFIGURATION,
+    PRIVILEGE_CODES.CREATE_CONFIGURATION,
+    PRIVILEGE_CODES.UPDATE_CONFIGURATION,
+    PRIVILEGE_CODES.DELETE_CONFIGURATION,
+  ],
+  [PRIVILEGE_CATEGORIES.USER_MANAGEMENT]: [
+    PRIVILEGE_CODES.READ_USER,
+    PRIVILEGE_CODES.CREATE_USER,
+    PRIVILEGE_CODES.UPDATE_USER,
+    PRIVILEGE_CODES.DELETE_USER,
+  ],
+  [PRIVILEGE_CATEGORIES.ROLE_MANAGEMENT]: [
+    PRIVILEGE_CODES.READ_ROLE,
+    PRIVILEGE_CODES.CREATE_ROLE,
+    PRIVILEGE_CODES.UPDATE_ROLE,
+    PRIVILEGE_CODES.DELETE_ROLE,
+  ],
+  [PRIVILEGE_CATEGORIES.SYSTEM]: [PRIVILEGE_CODES.SYSTEM_ADMIN],
+} as const;
+
+export function isValidPrivilegeCode(code: string): code is PrivilegeCode {
+  return Object.values(PRIVILEGE_CODES).includes(code as PrivilegeCode);
+}
+
+export const DEFAULT_ROLES = Object.values(ROLE_CODES);

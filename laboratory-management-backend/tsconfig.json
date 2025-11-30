@@ -1,0 +1,59 @@
+{
+  // Visit https://aka.ms/tsconfig to read more about this file
+  "compilerOptions": {
+    // File Layout
+    // "rootDir": "./src",
+    // "outDir": "./dist",
+    // Environment Settings
+    // See also https://aka.ms/tsconfig/module
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "target": "esnext",
+    // For nodejs:
+    "lib": [
+      "esnext"
+    ],
+    "types": [
+      "node",
+      "vitest"
+    ],
+    // Other Outputs
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+    // Stricter Typechecking Options
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    // Style Options
+    // "noImplicitReturns": true,
+    // "noImplicitOverride": true,
+    // "noUnusedLocals": true,
+    // "noUnusedParameters": true,
+    // "noFallthroughCasesInSwitch": true,
+    // "noPropertyAccessFromIndexSignature": true,
+    "noImplicitAny": true,
+    // Recommended Options
+    "strict": true,
+    "jsx": "react-jsx",
+    "allowImportingTsExtensions": false,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
+  },
+  "include": [
+    "services/iam-service/src/**/*",
+    "services/patientService/src/**/*",
+    "services/testOrderService/src/**/*",
+    "services/chat-service/src/**/*",
+    "services/monitoringService/src/**/*"
+  ],
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node",
+    "transpileOnly": true,
+  }
+}

@@ -1,0 +1,184 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { Search, ChevronDown, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+
+interface TestItemOption {
+  _id: string;
+  name: string;
+  code: string;
+  unit?: string;
+}
+
+interface TestItemMultiSelectProps {
+  options: TestItemOption[];
+  value: string[];
+  onChange: (value: string[]) => void;
+  placeholder?: string;
+  searchPlaceholder?: string;
+  disabled?: boolean;
+  error?: string;
+}
+
+export const TestItemMultiSelect: React.FC<TestItemMultiSelectProps> = ({
+  options,
+  value,
+  onChange,
+  placeholder,
+  searchPlaceholder,
+  disabled = false,
+  error,
+}) => {
+  const { t } = useTranslation();
+  const finalPlaceholder = placeholder || t('common.selectTestItems');
+  const finalSearchPlaceholder = searchPlaceholder || t('common.searchTestItems');
+
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const selectedOptions = options.filter(opt => value.includes(opt._id));
+
+  const filteredOptions = options.filter(opt =>
+    !value.includes(opt._id) &&
+    (opt.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+     opt.code.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+        setSearchTerm('');
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      setTimeout(() => inputRef.current?.focus(), 0);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  const handleAdd = (itemId: string) => {
+    onChange([...value, itemId]);
+    setSearchTerm('');
+  };
+
+  const handleRemove = (itemId: string) => {
+    onChange(value.filter(id => id !== itemId));
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="relative" ref={dropdownRef}>
+        <button
+          type="button"
+          onClick={() => !disabled && setIsOpen(!isOpen)}
+          disabled={disabled}
+          className={`w-full rounded-lg border px-3 py-2.5 text-sm text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+            error
+              ? 'border-red-500 bg-red-50'
+              : 'border-gray-300 bg-white hover:border-gray-400'
+          } disabled:bg-gray-50 disabled:cursor-not-allowed`}
+        >
+          <span className="text-gray-500">
+            {selectedOptions.length > 0
+              ? t('common.selectedTestItems', { count: selectedOptions.length })
+              : finalPlaceholder}
+          </span>
+          <ChevronDown
+            className={`w-4 h-4 text-gray-400 transition-transform ${
+              isOpen ? 'transform rotate-180' : ''
+            }`}
+          />
+        </button>
+
+        {isOpen && (
+          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-hidden">
+            {/* Search input */}
+            <div className="p-2 border-b border-gray-200">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder={finalSearchPlaceholder}
+                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            </div>
+
+            {/* Options list */}
+            <div className="max-h-48 overflow-y-auto">
+              {filteredOptions.length === 0 ? (
+                <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                  {searchTerm ? t('common.noResultsFound') : t('common.allSelected')}
+                </div>
+              ) : (
+                filteredOptions.map((option) => (
+                  <button
+                    key={option._id}
+                    type="button"
+                    onClick={() => handleAdd(option._id)}
+                    className="w-full px-3 py-2 text-sm text-left hover:bg-blue-50 transition-colors text-gray-900"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium">{option.name}</div>
+                        <div className="text-xs text-gray-500">{t('common.code')}: {option.code}</div>
+                      </div>
+                      {option.unit && (
+                        <div className="text-xs text-gray-400">
+                          {option.unit}
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Selected items */}
+      {selectedOptions.length > 0 && (
+        <div className="space-y-2 mt-2">
+          {selectedOptions.map((option) => (
+            <div
+              key={option._id}
+              className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg border border-gray-200"
+            >
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium text-gray-900 truncate">
+                  {option.name}
+                </div>
+                <div className="text-xs text-gray-500">{t('common.code')}: {option.code}</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleRemove(option._id)}
+                disabled={disabled}
+                className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {error && (
+        <p className="text-sm text-red-600 mt-1">{error}</p>
+      )}
+    </div>
+  );
+};
+
