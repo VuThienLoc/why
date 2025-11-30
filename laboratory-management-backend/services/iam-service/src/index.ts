@@ -18,7 +18,6 @@ import { errorHandler, notFoundHandler } from "./middlewares/error.middleware.js
 import "./config/oauth.config.js";
 
 console.log('[IAM Service] Environment loaded:');
-console.log('[IAM Service] PORT:', process.env.PORT);
 console.log('[IAM Service] INTERNAL_API_KEY:', process.env.INTERNAL_API_KEY ? '***' + process.env.INTERNAL_API_KEY.slice(-4) : 'NOT SET');
 console.log('[IAM Service] PATIENT_SERVICE_URL:', process.env.PATIENT_SERVICE_URL);
 
@@ -62,6 +61,7 @@ app.get("/", (req, res) => {
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-app.listen(process.env.PORT, () => {
-  console.log(`Server is running on http://localhost:${process.env.PORT}`);
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Server is running on http://localhost:${port}`);
 });
