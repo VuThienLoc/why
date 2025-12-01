@@ -1,3 +1,4 @@
+// @ts-ignore - swagger-autogen doesn't have TypeScript definitions
 import swaggerAutogen from 'swagger-autogen';
 
 const doc = {
@@ -6,7 +7,7 @@ const doc = {
     title: 'Warehouse Service API',
     description: 'Inventory, instrument, and reagent management microservice for the Laboratory Information Management System.'
   },
-  host: `localhost:${process.env.WAREHOUSE_SERVICE_PORT || 5003}`,
+  host: process.env.NODE_ENV === 'production' ? process.env.RENDER_EXTERNAL_HOSTNAME || process.env.HOST : `localhost:${process.env.WAREHOUSE_SERVICE_PORT || 5003}`,
   basePath: '/api',
   schemes: ['http', 'https'],
   tags: [

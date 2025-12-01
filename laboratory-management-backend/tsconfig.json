@@ -49,7 +49,10 @@
     "services/patientService/src/**/*",
     "services/testOrderService/src/**/*",
     "services/chat-service/src/**/*",
-    "services/monitoringService/src/**/*"
+    "services/monitoringService/src/**/*",
+    "services/message-service/src/**/*",
+    "services/notification-service/src/**/*",
+    "services/warehouseService/src/**/*"
   ],
   "ts-node": {
     "esm": true,
