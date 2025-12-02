@@ -41,6 +41,7 @@
     "build:warehouse": "npm run swagger:warehouse",
     "build:monitoring": "npm run swagger:monitoring",
     "start:monitoring": "tsx services/monitoringService/src/index.ts",
+    "start:warehouse-live": "tsx services/warehouseService/src/index.ts",
     "build": "npm-run-all --parallel swagger:iam swagger:message swagger:chat swagger:notification swagger:patient swagger:testOrder swagger:warehouse swagger:monitoring"
   },
   "keywords": [],
