@@ -1,5 +1,7 @@
 // @ts-ignore - swagger-autogen doesn't have TypeScript definitions
-    import swaggerAutogen from "swagger-autogen";
+import swaggerAutogen from "swagger-autogen";
+
+const PORT = 5004;
 
 const doc = {
   info: {
@@ -8,9 +10,12 @@ const doc = {
     description:
       "Monitoring microservice for Laboratory Management System. Captures cross-service event logs and event code references.",
   },
-  host: process.env.NODE_ENV === 'production' ? process.env.RENDER_EXTERNAL_HOSTNAME || process.env.HOST : `localhost:${process.env.MONITORING_SERVICE_PORT || 5004}`,
+  host:
+    process.env.NODE_ENV === "production"
+      ? process.env.RENDER_EXTERNAL_HOSTNAME || process.env.HOST
+      : `localhost:${PORT}`,
   basePath: "/api",
-  schemes: ["http", "https"],
+  schemes: process.env.NODE_ENV === "production" ? ["https"] : ["http"],
   tags: [
     {
       name: "Event Logs",
