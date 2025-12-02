@@ -19,7 +19,7 @@
     "swagger:chat": "tsx services/chat-service/src/swagger.ts",
     "swagger:patient": "tsx services/patientService/src/swagger.ts",
     "swagger:warehouse": "tsx services/warehouseService/src/swagger.ts",
-    "swagger:testOrder": "tsx services/testOrderService/src/swagger.ts",
+    "swagger:testOrder": "echo Using static swagger.yaml for testOrderService, no generation needed",
     "swagger:monitoring": "tsx services/monitoringService/src/swagger.ts",
     "swagger:message": "tsx services/message-service/src/swagger.ts",
     "swagger:notification": "tsx services/notification-service/src/swagger.ts",
