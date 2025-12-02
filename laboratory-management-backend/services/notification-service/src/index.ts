@@ -33,10 +33,12 @@ const corsOptions = {
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    // origin: process.env.WEB_URL || "http://localhost:5173",
-    // credentials: true,
-    origin: "*",
+    origin: process.env.WEB_URL || "http://localhost:5173",
+    credentials: true,
     methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    // origin: "*",
+    // methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
   },
 });
 
