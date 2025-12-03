@@ -28,10 +28,15 @@ const app = express();
 
 // CORS Configuration
 const corsOptions = {
-  origin: process.env.WEB_URL || "http://localhost:5173",
-  credentials: true,
+  origin: process.env.WEB_URL || "*",
+  credentials: process.env.WEB_URL ? true : false,
   methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Internal-API-Key", "X-Access-Token"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Internal-API-Key",
+    "X-Access-Token",
+  ],
 };
 
 app.use(cors(corsOptions));

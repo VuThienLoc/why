@@ -20,7 +20,19 @@ import apiRoutes from "./routes/index.js";
 const app = express();
 
 // Middleware
-app.use(cors({ origin: true, credentials: true }));
+const corsOptions = {
+  origin: process.env.WEB_URL || "*",
+  credentials: process.env.WEB_URL ? true : false,
+  methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Internal-API-Key",
+    "X-Access-Token",
+  ],
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());

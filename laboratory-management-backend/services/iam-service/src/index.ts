@@ -33,8 +33,8 @@ process.on('uncaughtException', (error) => {
 
 const app = express();
 const corsOptions = {
-  origin: process.env.WEB_URL,
-  credentials: true,
+  origin: process.env.WEB_URL || "*",
+  credentials: process.env.WEB_URL ? true : false,
   methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
 };

@@ -17,10 +17,15 @@ import cookieParser from "cookie-parser";
 const app = express();
 
 const corsOptions = {
-  origin: process.env.WEB_URL || "http://localhost:5173",
-  credentials: true,
+  origin: process.env.WEB_URL || "*",
+  credentials: process.env.WEB_URL ? true : false,
   methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Internal-API-Key",
+    "X-Access-Token",
+  ],
 };
 
 app.use(cors(corsOptions));
@@ -30,10 +35,15 @@ app.use(cookieParser());
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    // origin: process.env.WEB_URL || "http://localhost:5173",
-    // credentials: true,
-    origin: "*",
+    origin: process.env.WEB_URL || "*",
+    credentials: process.env.WEB_URL ? true : false,
     methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
+    allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Internal-API-Key",
+    "X-Access-Token",
+  ],
   },
 });
 
