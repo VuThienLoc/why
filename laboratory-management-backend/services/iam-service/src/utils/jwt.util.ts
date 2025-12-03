@@ -5,7 +5,6 @@ dotenv.config();
 
 
 const isProduction = process.env.NODE_ENV?.toLowerCase() === "production";
-console.log("Test", isProduction);
 const isSecure = isProduction || !!process.env.RENDER_EXTERNAL_HOSTNAME || process.env.HTTPS === 'true';
 
 const generateJWT = (res: Response, userId: string, email: string, role: string[]) => {
@@ -20,6 +19,7 @@ const generateJWT = (res: Response, userId: string, email: string, role: string[
     secure: isSecure,
     sameSite: isProduction ? "none" : "lax",
     maxAge: 15 * 60 * 1000,
+    partitioned: true,
     path: "/",
   });
 
@@ -28,6 +28,7 @@ const generateJWT = (res: Response, userId: string, email: string, role: string[
     secure: isSecure,
     maxAge: 24 * 60 * 60 * 1000,
     sameSite: isProduction ? "none" : "lax",
+    partitioned: true,
   });
 };
 
@@ -41,6 +42,7 @@ const refreshJWT = (res: Response, userId: string) => {
     secure: isSecure,
     sameSite: isProduction ? "none" : "lax",
     maxAge: 15 * 60 * 1000,
+    partitioned: true,
     path: "/",
   });
   console.log("New access Token has been assigned");
@@ -52,6 +54,7 @@ const clearJWT = (res: Response) => {
     secure: isSecure,
     sameSite: isProduction ? "none" : "lax",
     expires: new Date(0),
+    partitioned: true,
     path: "/",
   });
 
@@ -60,6 +63,7 @@ const clearJWT = (res: Response) => {
     secure: isSecure,
     sameSite: isProduction ? "none" : "lax",
     expires: new Date(0),
+    partitioned: true,
     path: "/",
   });
 };
