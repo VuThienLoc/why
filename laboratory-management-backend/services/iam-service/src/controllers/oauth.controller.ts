@@ -86,7 +86,7 @@ const googleCallback = async (req: Request, res: Response, next: NextFunction): 
       }
 
       // Redirect về frontend với user data
-      const frontendUrl = process.env.WEB_URL || 'http://localhost:5173';
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
       const userData = {
         message: 'Google login successful!',
         user: {

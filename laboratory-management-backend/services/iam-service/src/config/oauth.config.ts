@@ -13,7 +13,7 @@ const oauthService = new OAuthService();
 const googleConfig = {
   clientID: process.env.GOOGLE_CLIENT_ID!,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-  callbackURL: `${process.env.BASE_URL || 'http://localhost:3000'}/api/google/callback`,
+  callbackURL: `${process.env.WEB_URL || 'http://localhost:3000'}/api/google/callback`,
 };
 
 // Initialize Google OAuth strategy
