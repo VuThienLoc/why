@@ -30,6 +30,11 @@ const generateJWT = (res: Response, userId: string, email: string, role: string[
     sameSite: isProduction ? "none" : "lax",
     partitioned: true,
   });
+
+  return {
+    accessToken,
+    refreshToken,
+  }
 };
 
 const refreshJWT = (res: Response, userId: string) => {
@@ -45,7 +50,10 @@ const refreshJWT = (res: Response, userId: string) => {
     partitioned: true,
     path: "/",
   });
-  console.log("New access Token has been assigned");
+
+  return {
+    newAccessToken,
+  }
 };
 
 const clearJWT = (res: Response) => {

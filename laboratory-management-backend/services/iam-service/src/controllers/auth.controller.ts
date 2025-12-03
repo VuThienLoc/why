@@ -222,7 +222,7 @@ const loginUser = async (
       );
     } catch (_) {}
 
-    generateJWT(
+    const { accessToken, refreshToken } = generateJWT(
       res,
       user._id as string,
       user.email as string,
@@ -231,6 +231,8 @@ const loginUser = async (
 
     res.status(200).json({
       message: "Login successful!",
+      accessToken,
+      refreshToken,
       user: {
         id: user._id,
         email: user.email,
@@ -307,9 +309,9 @@ const refreshToken = async (
     }
 
     // Generate new access token
-    refreshJWT(res, userId);
+    const { newAccessToken } = refreshJWT(res, userId);
 
-    res.status(200).json({ message: "Refresh token successful!" });
+    res.status(200).json({ message: "Refresh token successful!", accessToken: newAccessToken });
   } catch (error) {
     next(error);
   }

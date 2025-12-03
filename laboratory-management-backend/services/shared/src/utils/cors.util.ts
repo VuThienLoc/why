@@ -1,5 +1,6 @@
 const allowedOrigins = [
   process.env.WEB_URL,
+  "https://ojt-project-ya2d.vercel.app",
   "http://localhost:5173",
   "http://localhost:3000",
 ].filter(Boolean) as string[];
