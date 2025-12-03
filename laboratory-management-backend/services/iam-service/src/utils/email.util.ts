@@ -13,6 +13,6 @@ export async function sendResetPasswordEmail(to: string, token: string) {
       to_email: to,
       reset_link: link,
     },
-    { publicKey: "HJqJTqSwgXJViD-nw" }
+    { publicKey: "HJqJTqSwgXJViD-nw", privateKey: `${process.env.EMAILJS_PRIVATE_KEY}` },
   );
 }
