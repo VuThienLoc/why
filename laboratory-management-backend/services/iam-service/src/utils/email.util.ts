@@ -7,7 +7,7 @@ export async function sendEmail(options: {
   subject: string;
   html: string;
 }) {
-  const from = process.env.EMAIL_FROM;
+  const from = "vuthienloct@gmail.com";
 
   if (!process.env.RESEND_API_KEY) {
     throw new Error("RESEND_API_KEY is not set");
