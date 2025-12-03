@@ -13,6 +13,7 @@ import swaggerUi from "swagger-ui-express";
 import swaggerDocument from "./swagger-output.json" with { type: "json"};
 
 import { errorHandler, notFoundHandler } from "./middlewares/error.middleware.js";
+import { corsOptions } from "../../shared/src/utils/cors.util.js";
 
 // Import OAuth config to initialize Passport strategies
 import "./config/oauth.config.js";
@@ -32,13 +33,6 @@ process.on('uncaughtException', (error) => {
 });
 
 const app = express();
-const corsOptions = {
-  origin: process.env.WEB_URL || "*",
-  credentials: process.env.WEB_URL ? true : false,
-  methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-};
-
 app.use(cors(corsOptions));
 
 

@@ -13,20 +13,9 @@ import { Server } from "socket.io";
 import { handleSocketConnection } from "./controllers/socket.controller.js";
 
 import cookieParser from "cookie-parser";
+import { corsOptions } from "../../shared/src/utils/cors.util.js";
 
 const app = express();
-
-const corsOptions = {
-  origin: process.env.WEB_URL || "*",
-  credentials: process.env.WEB_URL ? true : false,
-  methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
-  allowedHeaders: [
-    "Content-Type",
-    "Authorization",
-    "X-Internal-API-Key",
-    "X-Access-Token",
-  ],
-};
 
 app.use(cors(corsOptions));
 app.use(express.json());
@@ -35,15 +24,13 @@ app.use(cookieParser());
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.WEB_URL || "*",
-    credentials: process.env.WEB_URL ? true : false,
-    methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
-    allowedHeaders: [
-    "Content-Type",
-    "Authorization",
-    "X-Internal-API-Key",
-    "X-Access-Token",
-  ],
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+      // Reuse same logic as corsOptions.origin
+      (corsOptions as any).origin(origin, callback);
+    },
+    credentials: corsOptions.credentials,
+    methods: corsOptions.methods,
+    allowedHeaders: corsOptions.allowedHeaders,
   },
 });
 

@@ -16,22 +16,11 @@ import swaggerUi from "swagger-ui-express";
 import { readFileSync } from "fs";
 import connectDB from "./config/database.config.js";
 import apiRoutes from "./routes/index.js";
+import { corsOptions } from "../../shared/src/utils/cors.util.js";
 
 const app = express();
 
 // Middleware
-const corsOptions = {
-  origin: process.env.WEB_URL || "*",
-  credentials: process.env.WEB_URL ? true : false,
-  methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
-  allowedHeaders: [
-    "Content-Type",
-    "Authorization",
-    "X-Internal-API-Key",
-    "X-Access-Token",
-  ],
-};
-
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

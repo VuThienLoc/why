@@ -12,6 +12,7 @@ import swaggerDocument from "./swagger-output.json" with { type: "json"};
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import dotenv from 'dotenv';
+import { corsOptions } from "../../shared/src/utils/cors.util.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,13 +20,6 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 // Initialize Express app
 const app: Express = express();
-
-const corsOptions = {
-  origin: process.env.WEB_URL || "*",
-  credentials: process.env.WEB_URL ? true : false,
-  methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-};
 
 app.use(cors(corsOptions));
 app.use(express.json());

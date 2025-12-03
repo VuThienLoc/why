@@ -8,6 +8,7 @@ import routes from "./routes/index.js";
 import swaggerDocument from "./swagger-output.json" with { type: "json" };
 import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
+import { corsOptions } from "../../shared/src/utils/cors.util.js";
 
 // Load monitoring service specific .env with override
 const __filename = fileURLToPath(import.meta.url);
@@ -25,19 +26,6 @@ process.on('uncaughtException', (error) => {
 });
 
 const app = express();
-
-// CORS Configuration
-const corsOptions = {
-  origin: process.env.WEB_URL || "*",
-  credentials: process.env.WEB_URL ? true : false,
-  methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
-  allowedHeaders: [
-    "Content-Type",
-    "Authorization",
-    "X-Internal-API-Key",
-    "X-Access-Token",
-  ],
-};
 
 app.use(cors(corsOptions));
 
