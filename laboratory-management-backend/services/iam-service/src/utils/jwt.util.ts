@@ -5,6 +5,7 @@ dotenv.config();
 
 
 const isProduction = process.env.NODE_ENV?.toLowerCase() === "production";
+console.log("Test", isProduction);
 const isSecure = isProduction || !!process.env.RENDER_EXTERNAL_HOSTNAME || process.env.HTTPS === 'true';
 
 const generateJWT = (res: Response, userId: string, email: string, role: string[]) => {
@@ -26,7 +27,7 @@ const generateJWT = (res: Response, userId: string, email: string, role: string[
     httpOnly: true,
     secure: isSecure,
     maxAge: 24 * 60 * 60 * 1000,
-    sameSite: "strict",
+    sameSite: isProduction ? "none" : "lax",
   });
 };
 
