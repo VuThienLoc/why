@@ -5,7 +5,7 @@ dotenv.config();
 
 
 const isProduction = process.env.NODE_ENV?.toLowerCase() === "production";
-const isSecure = isProduction || process.env.RENDER_EXTERNAL_HOSTNAME || process.env.HTTPS === 'true';
+const isSecure = isProduction || !!process.env.RENDER_EXTERNAL_HOSTNAME || process.env.HTTPS === 'true';
 
 const generateJWT = (res: Response, userId: string, email: string, role: string[]) => {
 
@@ -17,7 +17,7 @@ const generateJWT = (res: Response, userId: string, email: string, role: string[
   res.cookie("accessToken", accessToken, {
     httpOnly: true,
     secure: isSecure,
-    sameSite: "strict",
+    sameSite: isProduction ? "none" : "lax",
     maxAge: 15 * 60 * 1000,
     path: "/",
   });
@@ -38,7 +38,7 @@ const refreshJWT = (res: Response, userId: string) => {
   res.cookie("accessToken", newAccessToken, {
     httpOnly: true,
     secure: isSecure,
-    sameSite: "strict",
+    sameSite: isProduction ? "none" : "lax",
     maxAge: 15 * 60 * 1000,
     path: "/",
   });
@@ -49,7 +49,7 @@ const clearJWT = (res: Response) => {
   res.cookie("accessToken", "", {
     httpOnly: true,
     secure: isSecure,
-    sameSite: "strict",
+    sameSite: isProduction ? "none" : "lax",
     expires: new Date(0),
     path: "/",
   });
@@ -57,7 +57,7 @@ const clearJWT = (res: Response) => {
   res.cookie("refreshToken", "", {
     httpOnly: true,
     secure: isSecure,
-    sameSite: "strict",
+    sameSite: isProduction ? "none" : "lax",
     expires: new Date(0),
     path: "/",
   });

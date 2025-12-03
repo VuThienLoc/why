@@ -1,6 +1,6 @@
 import { AppError } from "../utils/error.util.js";
 import { userRepository } from "../repositories/index.js";
-import { transporter } from "../utils/email.util.js";
+import { sendResetPasswordEmail } from "../utils/email.util.js";
 import { UserService } from "./user.service.js";
 import jwt, { SignOptions } from "jsonwebtoken";
 import { logEvent } from "../utils/logging.util.js";
@@ -24,31 +24,7 @@ export class EmailService {
         { expiresIn: process.env.JWT_EXPIRY } as SignOptions
       );
 
-      await transporter.verify();
-
-      const link = `${process.env.WEB_URL}/reset-password?token=${dedicatedToken}`;
-      await transporter.sendMail({
-        from: "vuthienloct@gmail.com",
-        to: user.email,
-        subject: "Reset your password",
-        text: `Reset your password using this link: ${link}`,
-        html: `
-          <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111;">
-            <h2 style="margin: 0 0 12px; color: #111;">Password reset requested</h2>
-            <p style="margin: 0 0 16px;">We received a request to reset your password. Click the button below to set a new password.</p>
-            <p style="margin: 0 0 16px;">If you did not request this, you can safely ignore this email.</p>
-            <div style="margin: 24px 0;">
-              <a href="${link}" style="background:#2563eb;color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none;display:inline-block;font-weight:600">Reset Password</a>
-            </div>
-            <p style="margin: 0 0 8px; color:#555;">Or copy and paste this link into your browser:</p>
-            <p style="margin: 0; word-break: break-all; color:#2563eb;">
-              <a href="${link}" style="color:#2563eb;">${link}</a>
-            </p>
-            <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
-            <p style="font-size:12px; color:#666; margin:0;">This link may expire based on your security settings.</p>
-          </div>
-        `,
-      });
+      await sendResetPasswordEmail(user.email, dedicatedToken);
     } catch (error) {
       console.log(error);
       throw error;
