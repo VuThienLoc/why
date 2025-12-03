@@ -1,65 +1,45 @@
-import { Resend } from "resend";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import * as emailjs from "@emailjs/nodejs";
 
 export async function sendEmail(options: {
   to: string;
   subject: string;
   html: string;
 }) {
-  const from = "Acme <onboarding@resend.dev>";
-
-  if (!process.env.RESEND_API_KEY) {
-    throw new Error("RESEND_API_KEY is not set");
-  }
-
-  if (!from) {
-    throw new Error("EMAIL_FROM is not set");
-  }
-
   const { to, subject, html } = options;
 
-  const result = await resend.emails.send({
-    from,
-    to,
-    subject,
-    html,
-  });
+  if (!process.env.EMAILJS_SERVICE_ID ||
+      !process.env.EMAILJS_TEMPLATE_ID_GENERIC ||
+      !process.env.EMAILJS_PUBLIC_KEY) {
+    throw new Error("EmailJS env vars not set");
+  }
+
+  const result = await emailjs.send(
+    process.env.EMAILJS_SERVICE_ID,
+    process.env.EMAILJS_TEMPLATE_ID_GENERIC,
+    {
+      to_email: to,
+      subject,
+      message_html: html,
+    },
+    { publicKey: process.env.EMAILJS_PUBLIC_KEY }
+  );
 
   return result;
 }
 
 export async function sendResetPasswordEmail(to: string, token: string) {
   const frontendUrl = process.env.WEB_URL || process.env.FRONTEND_URL;
+  if (!frontendUrl) throw new Error("WEB_URL or FRONTEND_URL is not set");
 
-  if (!frontendUrl) {
-    throw new Error("WEB_URL or FRONTEND_URL is not set");
-  }
+  const link = `${frontendUrl}/reset-password?token=${encodeURIComponent(token)}`;
 
-  const link = `${frontendUrl}/reset-password?token=${encodeURIComponent(
-    token
-  )}`;
-
-  const html = `
-          <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111;">
-            <h2 style="margin: 0 0 12px; color: #111;">Password reset requested</h2>
-            <p style="margin: 0 0 16px;">We received a request to reset your password. Click the button below to set a new password.</p>
-            <p style="margin: 0 0 16px;">If you did not request this, you can safely ignore this email.</p>
-            <div style="margin: 24px 0;">
-              <a href="${link}" style="background:#2563eb;color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none;display:inline-block;font-weight:600">Reset Password</a>
-            </div>
-            <p style="margin: 0 0 8px; color:#555;">Or copy and paste this link into your browser:</p>
-            <p style="margin: 0; word-break: break-all; color:#2563eb;">
-              <a href="${link}" style="color:#2563eb;">${link}</a>
-            </p>
-            <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
-            <p style="font-size:12px; color:#666; margin:0;">This link may expire based on your security settings.</p>
-          </div>
-        `;
-
-  return sendEmail({
-    to,
-    subject: "Reset your password",
-    html,
-  });
+  return emailjs.send(
+    "service_fcws2d3",
+    "template_euzpdze",
+    {
+      to_email: to,
+      reset_link: link,
+    },
+    { publicKey: "HJqJTqSwgXJViD-nw" }
+  );
 }
