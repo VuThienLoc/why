@@ -7,7 +7,7 @@ export async function sendEmail(options: {
   subject: string;
   html: string;
 }) {
-  const from = "vuthienloct@gmail.com";
+  const from = "Acme <onboarding@resend.dev>";
 
   if (!process.env.RESEND_API_KEY) {
     throw new Error("RESEND_API_KEY is not set");
@@ -39,8 +39,6 @@ export async function sendResetPasswordEmail(to: string, token: string) {
   const link = `${frontendUrl}/reset-password?token=${encodeURIComponent(
     token
   )}`;
-
-  const text = `Reset your password using this link: ${link}`;
 
   const html = `
           <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111;">
