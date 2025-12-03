@@ -73,7 +73,7 @@ const googleCallback = async (req: Request, res: Response, next: NextFunction): 
         return next(new AppError(401, 'Google authentication failed'));
       }
 
-      generateJWT(res, user._id as string, user.email as string, user.role as string[]);
+      const { accessToken, refreshToken } = generateJWT(res, user._id as string, user.email as string, user.role as string[]);
 
       let returnTo = '/';
       try {
@@ -85,9 +85,9 @@ const googleCallback = async (req: Request, res: Response, next: NextFunction): 
         console.warn('Failed to decode OAuth state:', stateError);
       }
 
-      // Redirect về frontend với user data
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-      const userData = {
+      res.status(200).json({
+        accessToken,
+        refreshToken,
         message: 'Google login successful!',
         user: {
           id: user._id,
@@ -98,10 +98,7 @@ const googleCallback = async (req: Request, res: Response, next: NextFunction): 
           avatar: user.avatar,
         },
         redirectTo: returnTo,
-      };
-      
-      const encodedData = encodeURIComponent(JSON.stringify(userData));
-      res.redirect(`${frontendUrl}/auth/google/callback?data=${encodedData}`);
+      });
     })(req, res);
   } catch (error) {
     next(error);
@@ -138,6 +135,7 @@ const getOAuthStatus = async (req: Request, res: Response, next: NextFunction): 
     next(error);
   }
 };
+
 
 const linkOAuthAccount = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   /*
