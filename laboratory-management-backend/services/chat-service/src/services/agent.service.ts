@@ -43,7 +43,6 @@ import { Annotation } from "@langchain/langgraph";
 import { tool } from "@langchain/core/tools";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { MongoDBSaver } from "@langchain/langgraph-checkpoint-mongodb";
-import { MongoDBAtlasVectorSearch } from "@langchain/mongodb";
 import { Db } from "mongodb";
 import { z } from "zod";
 
@@ -135,81 +134,6 @@ export async function callAgent({ db, query, threadId }: CallAgentParams) {
           };
 
           const hf = new InferenceClient(process.env.HF_ACCESS_TOKEN);
-
-          const vectorStore = new MongoDBAtlasVectorSearch(
-            {
-              embedDocuments: async (texts: string[]): Promise<number[][]> => {
-                const embeddings: number[][] = [];
-
-                for (const text of texts) {
-                  try {
-                    const response = await rateLimitedRequest(() =>
-                      hf.featureExtraction({
-                        model: "sentence-transformers/all-MiniLM-L6-v2",
-                        inputs: text,
-                      })
-                    );
-
-                    // Handle the response format
-                    let embedding: number[];
-                    if (Array.isArray(response)) {
-                      if (response.length > 0 && typeof response[0] === "number") {
-                        embedding = response as number[];
-                      } else if (response.length > 0 && Array.isArray(response[0])) {
-                        embedding = (response as number[][])[0] || [];
-                      } else {
-                        embedding = [];
-                      }
-                    } else {
-                      embedding = typeof response === "number" ? [response] : [];
-                    }
-
-                    if (embedding.length === 0) {
-                      throw new Error("Received empty embedding");
-                    }
-                    embeddings.push(embedding);
-                  } catch (error) {
-                    console.error("Error generating embedding for text:", text, error);
-                    throw error;
-                  }
-                }
-                return embeddings;
-              },
-              embedQuery: async (text: string): Promise<number[]> => {
-                try {
-                  const response = await rateLimitedRequest(() =>
-                    hf.featureExtraction({
-                      model: "sentence-transformers/all-MiniLM-L6-v2",
-                      inputs: text,
-                    })
-                  );
-
-                  // Handle the response format
-                  let embedding: number[];
-                  if (Array.isArray(response)) {
-                    if (response.every((item) => typeof item === "number")) {
-                      embedding = response as number[];
-                    } else if (Array.isArray(response[0])) {
-                      embedding = response[0] as number[];
-                    } else {
-                      embedding = [];
-                    }
-                  } else {
-                    embedding = typeof response === "number" ? [response] : [];
-                  }
-
-                  if (embedding.length === 0) {
-                    throw new Error("Received empty query embedding");
-                  }
-                  return embedding;
-                } catch (error) {
-                  console.error("Error generating query embedding:", error);
-                  throw error;
-                }
-              },
-            },
-            dbConfig
-          );
 
           console.log("Performing text search...");
           const textResults = await collection
