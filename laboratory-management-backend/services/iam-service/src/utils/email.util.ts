@@ -10,8 +10,8 @@ export async function sendResetPasswordEmail(to: string, token: string) {
     "service_fcws2d3",
     "template_euzpdze",
     {
-      to_email: to,
-      reset_link: link,
+      email: to,
+      link: link,
     },
     { publicKey: "HJqJTqSwgXJViD-nw", privateKey: `${process.env.EMAILJS_PRIVATE_KEY}` },
   );
