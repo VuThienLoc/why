@@ -10,7 +10,7 @@ import Button from '../../../../../components/common/button';
 import { Label } from '../../../../../components/common/label';
 import { Input } from '../../../../../components/common/input';
 import { FlaskConical, Tag, Factory, MapPin, Calendar, Scale, FileText, Link as LinkIcon } from 'lucide-react';
-import type { Reagent } from '../../../types/Reagent';
+import type { Reagent } from '@/pages/labuser/types/Reagent';
 import { getStatusBadge, formatDate } from '../../../utils/reagentUtils';
 import { useTranslation } from 'react-i18next';
 

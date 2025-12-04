@@ -7,14 +7,14 @@ import { ArrowLeft, User, FileText, Eye, Pencil, Trash2, FlaskConical } from 'lu
 import { patientService, type PatientOption, type PatientDetailResponse, viewPatientDetail } from '../../../../service/patientService';
 import { patientMedicalRecordService, type PatientMedicalRecord } from '../../../../service/patientMedicalRecordService';
 // import { testOrderService } from '../../../../service/testOrderService';
-import { testResultService } from '../../../../service/testResultService';
-import type { TestResult } from '@/pages/NormalUser/type/TestResult';
+import { testResultService, type TestResultFlatItem } from '../../../../service/testResultService';
+import type { TestResult } from '@/pages/labuser/types/TestResultTypes';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-import EditPatientMedicalRecord from '@/pages/LabUser/components/modals/PatientMedicalRecordModal/PatientMedicalRecordEditModal';
+import EditPatientMedicalRecord from '@/pages/labuser/components/modals/PatientMedicalRecordModal/PatientMedicalRecordEditModal';
 import { DeleteConfirmDialog } from '../DeleteConfirmDialog';
-import MedicalRecordViewModal from '@/pages/LabUser/components/modals/PatientMedicalRecordModal/PatientMedicalRecordViewModal';
-import TestResultModal from '@/pages/LabUser/components/modals/TestResultModal/TestResultModal';
+import MedicalRecordViewModal from '@/pages/labuser/components/modals/PatientMedicalRecordModal/PatientMedicalRecordViewModal';
+import TestResultModal from '@/pages/labuser/components/modals/TestResultModal/TestResultModal';
 
 // Type for test result items from API
 interface TestResultItem {
@@ -30,7 +30,7 @@ interface TestResultItem {
   code: string;
   unit: string;
   result_value: number;
-  result_status: 'normal' | 'high' | 'low';
+  result_status: 'normal' | 'high' | 'low' | 'abnormal' | 'critical';
   reviewed: boolean;
   reviewer_comment: string;
   is_deleted: boolean;
@@ -90,7 +90,32 @@ const PatientDetail: React.FC = () => {
       const response = await testResultService.getResultsByPatientId(patient.id);
       
       if (response && response.success && response.data) {
-        setTestResultItems(response.data);
+        // Cast the data to TestResultItem[] since the API returns TestResultFlatItem[]
+        // First cast to unknown, then to the target type to avoid type errors
+        const items = response.data as unknown as TestResultFlatItem[];
+        // Map TestResultFlatItem to TestResultItem format
+        const mappedItems: TestResultItem[] = items.map(item => ({
+          _id: item._id,
+          test_order_id: item.test_order_id,
+          test_item_id: item.test_item_id,
+          patient_id: item.patient_id,
+          test_type: item.test_type,
+          name: item.name,
+          instrument_name: item.instrument_name,
+          patient_name: item.patient_name,
+          reagent_names: item.reagent_names,
+          code: item.code,
+          unit: item.unit,
+          result_value: item.result_value,
+          result_status: item.result_status,
+          reviewed: item.reviewed,
+          reviewer_comment: item.reviewer_comment,
+          is_deleted: item.is_deleted,
+          deleted_at: item.deleted_at,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
+        }));
+        setTestResultItems(mappedItems);
       } else {
         setTestResultItems([]);
       }
@@ -398,7 +423,7 @@ const PatientDetail: React.FC = () => {
       </Card>
 
   {/* Create MR moved to list page */}
-      <EditPatientMedicalRecord id={editId} open={Boolean(editId)} onOpenChange={(o) => { if (!o) setEditId(null); }} onUpdated={() => setRefreshKey(k => k + 1)} />
+      <EditPatientMedicalRecord id={editId} open={Boolean(editId)} onOpenChange={(o: boolean) => { if (!o) setEditId(null); }} onUpdated={() => setRefreshKey(k => k + 1)} />
       <MedicalRecordViewModal recordId={viewId} isOpen={Boolean(viewId)} onClose={() => setViewId(null)} />
       <TestResultModal 
         isOpen={testResultModalOpen} 

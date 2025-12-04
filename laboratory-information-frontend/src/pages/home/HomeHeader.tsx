@@ -32,13 +32,13 @@ export function HomeHeader({ onShowLogin, onShowRegister }: HomeHeaderProps) {
       if (user.role.includes(role)) {
         switch (role) {
           case "ADMIN":
-            return "/admin/dashboard";
+            return "/admin/user-management";
           case "MANAGER":
             return "/manager/user-management";
           case "LAB_USER":
-            return "/labuser/dashboard";
+            return "/labuser/test-orders";
           case "SERVICE":
-            return "/service/dashboard";
+            return "/service/event-logs";
           case "USER":
             return "/user/dashboard";
           default:

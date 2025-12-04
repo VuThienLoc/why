@@ -4,6 +4,7 @@ import { Card } from "@/components/common/card";
 import { MessageCircle, X, Send } from "lucide-react";
 import { Textarea } from "@/components/common/textarea";
 import { sendMessage, continueChat } from "@/service/chatBoxService";
+import { FormattedText } from "@/components/common/FormattedText";
 
 const ChatBox = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -123,7 +124,14 @@ const ChatBox = () => {
                       : "bg-muted text-foreground"
                   }`}
                 >
-                  <p className="text-xs sm:text-sm break-words">{message.text}</p>
+                  {message.sender === "bot" ? (
+                    <FormattedText 
+                      text={message.text} 
+                      className="text-xs sm:text-sm break-words whitespace-pre-wrap" 
+                    />
+                  ) : (
+                    <p className="text-xs sm:text-sm break-words">{message.text}</p>
+                  )}
                 </div>
               </div>
             ))}

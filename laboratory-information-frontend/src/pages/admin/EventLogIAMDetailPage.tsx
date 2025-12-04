@@ -53,6 +53,10 @@ export const EventLogIAMDetailPage: React.FC<EventLogIAMDetailPageProps> = ({ lo
     return labels[role] || role;
   };
 
+  const getIsActive = (isActive: boolean) => {
+    return isActive ? t('eventLog.iam.active') : t('eventLog.iam.inactive');
+  };
+
   const renderUserInfo = (snapshot: IAMUserSnapshot | null, title: string, options: { hideRole?: boolean } = {}) => {
     if (!snapshot) return null;
 
@@ -121,7 +125,14 @@ export const EventLogIAMDetailPage: React.FC<EventLogIAMDetailPageProps> = ({ lo
               </p>
             </div>
           )}
+          {snapshot.isActive !== undefined && (
+            <div>
+              <p className="text-gray-500">{t('eventLog.iam.isActive')}</p>
+              <p className="font-medium">{getIsActive(snapshot.isActive)}</p>
+            </div>
+          )}
         </div>
+        
       </div>
     );
   };

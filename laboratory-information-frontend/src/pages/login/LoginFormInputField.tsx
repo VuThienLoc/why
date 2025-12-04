@@ -24,14 +24,14 @@ export function LoginInputField({ id, label, type = 'text', placeholder, value, 
   return (
     <div className="space-y-2">
       <Label htmlFor={id} className="text-sm text-gray-700">
-        {label}
+        {t(label)}
       </Label>
       <div className="relative">
         {Icon && <Icon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />}
         <Input
           id={id}
           type={inputType}
-          placeholder={placeholder}
+          placeholder={t(placeholder)}
           className={`${Icon ? 'pl-10' : 'pl-3'} ${isPasswordField ? 'pr-10' : 'pr-3'} h-12 border-gray-200 focus:border-blue-400 rounded-lg`}
           value={value}
           onChange={onChange}

@@ -7,30 +7,174 @@ import TestOrder from "../../db/models/TestOrder.model.js";
 import { TestItem } from "../../db/models/TestItem.model.js";
 import mongoose from "mongoose";
 import testOrderMonitoringService from "../monitoring/testOrderMonitoring.service.js";
-import iamServiceClient from "../iam/iamServiceClient.js";
+import iamServiceClient, { type IamUser } from "../iam/iamServiceClient.js";
+import patientServiceClient, { type Patient } from "../patient/patientServiceClient.js";
 import { unknown } from "zod";
+
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const computeDifferences = (
+  oldData: Record<string, unknown> | null | undefined,
+  newData: Record<string, unknown> | null | undefined
+) => {
+  const oldDiff: Record<string, unknown> = {};
+  const newDiff: Record<string, unknown> = {};
+
+  const allKeys = new Set([
+    ...Object.keys(oldData || {}),
+    ...Object.keys(newData || {}),
+  ]);
+
+  for (const key of allKeys) {
+    if (["updated_at", "updated_by", "__v"].includes(key)) {
+      continue;
+    }
+
+    const oldVal = oldData?.[key];
+    const newVal = newData?.[key];
+
+    if (isPlainObject(oldVal) && isPlainObject(newVal)) {
+      const nested = computeDifferences(oldVal, newVal);
+      if (
+        Object.keys(nested.oldDiff).length > 0 ||
+        Object.keys(nested.newDiff).length > 0
+      ) {
+        oldDiff[key] = nested.oldDiff;
+        newDiff[key] = nested.newDiff;
+      }
+      continue;
+    }
+
+    if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
+      oldDiff[key] = oldVal;
+      newDiff[key] = newVal;
+    }
+  }
+  return { oldDiff, newDiff };
+};
+
+const toStringId = (value: unknown): string | null => {
+  if (!value) {
+    return null;
+  }
+  if (typeof value === "string") {
+    return value;
+  }
+  if (typeof value === "object" && "toString" in value) {
+    try {
+      return (value as { toString: () => string }).toString();
+    } catch {
+      return null;
+    }
+  }
+  return null;
+};
+
+const buildUserSnapshot = (user: IamUser | null | undefined): Record<string, unknown> | null => {
+  if (!user) {
+    return null;
+  }
+  return {
+    id: user._id,
+    email: user.email,
+    fullName: user.fullName,
+    identityNumber: user.identityNumber,
+    phoneNumber: user.phoneNumber,
+    gender: user.gender,
+    dateOfBirth: user.dateOfBirth,
+    address: user.address,
+    age: user.age,
+    role: user.role,
+    isActive: user.isActive,
+    avatar: user.avatar ?? null,
+  };
+};
+
+const buildPatientSnapshot = (patient: Patient | null | undefined): Record<string, unknown> | null => {
+  if (!patient) {
+    return null;
+  }
+  return {
+    id: patient._id,
+    userId: patient.user_id ?? null,
+    code: patient.patient_code ?? null,
+    isActive: patient.is_active ?? null,
+    isDeleted: patient.is_deleted ?? null,
+    lastVisitDate: patient.last_visit_date ?? null,
+    lastTestType: patient.last_test_type ?? null,
+    emergencyContact: patient.emergency_contact ?? null,
+    createdAt: patient.created_at ?? null,
+    updatedAt: patient.updated_at ?? null,
+    deletedAt: patient.deleted_at ?? null,
+  };
+};
+
+const buildOrderSnapshotPayload = (
+  order: Record<string, unknown> | null | undefined,
+  patient: Patient | null | undefined
+): Record<string, unknown> | null => {
+  const snapshot: Record<string, unknown> = {};
+
+  if (order) {
+    snapshot.order = {
+      id: toStringId(order._id),
+      patientId: order.patient_id ?? null,
+      barcode: order.barcode ?? null,
+      testType: order.test_type ?? null,
+      status: order.status ?? null,
+      instrumentId: order.instrument_id ?? null,
+      instrumentName: order.instrument_name ?? null,
+      dueDate: order.due_date ?? null,
+      createdAt: order.created_at ?? null,
+      updatedAt: order.updated_at ?? null,
+      notes: order.notes ?? null,
+    };
+  }
+
+  const patientSnapshot = buildPatientSnapshot(patient ?? null);
+  if (patientSnapshot) {
+    snapshot.patient = patientSnapshot;
+  }
+
+  const userSnapshot = buildUserSnapshot(patient?.user ?? null);
+  if (userSnapshot) {
+    snapshot.user = userSnapshot;
+  }
+
+  return Object.keys(snapshot).length > 0 ? snapshot : null;
+};
+
+const buildSnapshotForOrder = async (
+  order: Record<string, unknown> | null | undefined
+): Promise<Record<string, unknown> | null> => {
+  if (!order) {
+    return null;
+  }
+  const patientId =
+    typeof order.patient_id === "string" && order.patient_id.length > 0
+      ? order.patient_id
+      : null;
+  let patient: Patient | null = null;
+  if (patientId) {
+    patient = await patientServiceClient.getPatientById(patientId);
+  }
+  return buildOrderSnapshotPayload(order, patient);
+};
 
 export const TestOrderService = {
 
-  getDifferences(oldData: any, newData: any) {
-    const oldDiff: any = {};
-    const newDiff: any = {};
+  getDifferences(
+    oldData: any,
+    newData: any,
+    snapshot?: Record<string, unknown> | null
+  ) {
+    const { oldDiff, newDiff } = computeDifferences(oldData, newData);
 
-    const allKeys = new Set([...Object.keys(oldData || {}), ...Object.keys(newData || {})]);
-
-    for (const key of allKeys) {
-      // Bỏ qua các trường metadata thường xuyên thay đổi hoặc không quan trọng
-      if (['updated_at', 'updated_by', '__v'].includes(key)) continue;
-
-      const oldVal = oldData?.[key];
-      const newVal = newData?.[key];
-
-      // So sánh deep bằng JSON.stringify
-      if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
-        oldDiff[key] = oldVal;
-        newDiff[key] = newVal;
-      }
+    if (snapshot) {
+      newDiff.snapshot = snapshot;
     }
+
     return { oldDiff, newDiff };
   },
 
@@ -71,7 +215,7 @@ export const TestOrderService = {
         const testItems = await TestItem.find({ _id: { $in: enriched.test_item_ids } }).select('name');
         const nameMap = new Map(testItems.map(t => [t._id.toString(), t.name]));
         const names = enriched.test_item_ids.map((id: any) => nameMap.get(id.toString()));
-        
+
         // Reorder: put test_item_names after test_item_ids for better readability
         const entries = Object.entries(enriched);
         const idx = entries.findIndex(([k]) => k === 'test_item_ids');
@@ -83,9 +227,9 @@ export const TestOrderService = {
         }
       }
     } catch (error) {
-      console.warn("[TestOrderService] Error enriching log data:", error);
+      // ignore enrichment errors to avoid blocking order creation
     }
-    
+
     return enriched;
   },
 
@@ -107,19 +251,22 @@ export const TestOrderService = {
 
 
   async getOrdersGroupedByOnePatient(
+    user_id: string,
     patient_id: string,
-    created_at: Date,
-    page = 1,
-    limit = 3
+    created_at?: Date
   ): Promise<any[]> {
-    const skip = (page - 1) * limit;
+
+    const match: any = { is_deleted: false, patient_id };
+    if (created_at) {
+      match.created_at = { $gte: created_at };
+    }
 
     return TestOrder.aggregate([
-      { $match: { is_deleted: false, patient_id: patient_id } },
+      { $match: match },
       { $sort: { created_at: -1 } },
       {
         $group: {
-          _id: "$patient_id",
+          _id: "$user_id",
           patient_name: { $first: "$patient_name" },
           orders: { $push: "$$ROOT" }
         }
@@ -130,11 +277,12 @@ export const TestOrderService = {
           patient_id: "$_id",
           patient_name: 1,
           totalOrders: { $size: "$orders" },
-          orders: { $slice: ["$orders", skip, limit] }
+          orders: 1 // trả về tất cả orders, không slice
         }
       }
     ]);
   },
+
 
 
 
@@ -146,7 +294,7 @@ export const TestOrderService = {
 
     // Tạo patient_id tạm thời nếu chỉ có patient_name
     const patientId = data.patient_id?.trim() || `temp_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
-    
+
     // Dùng reagent_usages từ request, ép quantity_used về number, default 1 nếu null
     const reagentUsages: ReagentUsage[] = (data.reagent_usages ?? []).map(r => ({
       reagent_id: r.reagent_id,
@@ -211,7 +359,7 @@ export const TestOrderService = {
     for (const usage of reagentUsages) {
       const reagent = await reagentServiceClient.getReagentById(usage.reagent_id);
       if (!reagent) continue;
-      
+
       reagentNamesMap.set(usage.reagent_id, reagent.reagent_name);
 
       // quantity_current mới = quantity_current  - quantity_used
@@ -225,21 +373,23 @@ export const TestOrderService = {
     try {
       let user = null;
       const userIdToFetch = operatorId;
-      
+
       if (userIdToFetch) {
         try {
           user = await iamServiceClient.getUserById(userIdToFetch);
         } catch (e) {
-          console.warn("[TestOrderService] Could not fetch user details for monitoring:", e);
+          // ignore user lookup errors
         }
       }
 
       const logPayload = await this.enrichOrderForLog(createdOrder.toObject());
+      const snapshot = await buildSnapshotForOrder(logPayload ?? createdOrder.toObject());
+      const monitoringNewValues = snapshot ? { snapshot } : logPayload ?? null;
 
       await testOrderMonitoringService.recordTestOrderCreated({
         testOrderId: createdOrder._id as unknown as string,
         eventMessage: "Test order created",
-        newValues: logPayload,
+        newValues: monitoringNewValues,
         operatorId: userIdToFetch || data.created_by,
         operatorEmail: user?.email ?? null,
         operatorName: user?.fullName || (data.created_by !== 'system' ? data.created_by : null),
@@ -247,7 +397,7 @@ export const TestOrderService = {
         operatorAvatar: user?.avatar ?? null
       });
     } catch (error) {
-      console.error("[TestOrderService] Failed to log create event", error);
+      // swallow monitoring failures
     }
 
     return createdOrder;
@@ -327,19 +477,20 @@ export const TestOrderService = {
     try {
       let user = null;
       const userIdToFetch = operatorId;
-      
+
       if (userIdToFetch) {
         try {
           user = await iamServiceClient.getUserById(userIdToFetch);
         } catch (e) {
-          console.warn("[TestOrderService] Could not fetch user details for monitoring:", e);
+          // ignore user lookup errors
         }
       }
 
       const oldValues = await this.enrichOrderForLog(existingOrder.toObject());
       const newValues = await this.enrichOrderForLog(updatedOrder?.toObject());
+      const snapshot = await buildSnapshotForOrder(newValues ?? updatedOrder?.toObject());
 
-      const { oldDiff, newDiff } = this.getDifferences(oldValues, newValues);
+      const { oldDiff, newDiff } = this.getDifferences(oldValues, newValues, snapshot);
 
       await testOrderMonitoringService.recordTestOrderUpdated({
         testOrderId: id,
@@ -353,7 +504,7 @@ export const TestOrderService = {
         operatorAvatar: user?.avatar ?? null
       });
     } catch (error) {
-      console.error("[TestOrderService] Failed to log update event", error);
+      // swallow monitoring failures
     }
 
     return updatedOrder;
@@ -394,19 +545,20 @@ export const TestOrderService = {
     try {
       let user = null;
       const userIdToFetch = operatorId;
-      
+
       if (userIdToFetch) {
         try {
           user = await iamServiceClient.getUserById(userIdToFetch);
         } catch (e) {
-          console.warn("[TestOrderService] Could not fetch user details for monitoring:", e);
+          // ignore user lookup errors
         }
       }
 
       const oldValues = await this.enrichOrderForLog(order.toObject());
       const newValues = await this.enrichOrderForLog(updatedOrder?.toObject());
+      const snapshot = await buildSnapshotForOrder(newValues ?? updatedOrder?.toObject());
 
-      const { oldDiff, newDiff } = this.getDifferences(oldValues, newValues);
+      const { oldDiff, newDiff } = this.getDifferences(oldValues, newValues, snapshot);
 
       await testOrderMonitoringService.recordTestOrderUpdated({
         testOrderId: id,
@@ -420,7 +572,7 @@ export const TestOrderService = {
         operatorAvatar: user?.avatar ?? null
       });
     } catch (error) {
-      console.error("[TestOrderService] Failed to log status update event", error);
+      // swallow monitoring failures
     }
 
     return updatedOrder;
@@ -443,7 +595,7 @@ export const TestOrderService = {
       }
     } else {
       // Nếu status là Completed thì không hồi lại reagent
-      console.log(`Order ${_id} đã hoàn thành, không hồi lại reagent`);
+      // skip reagent restoration for completed orders
     }
 
     if (order.instrument_id) {
@@ -460,21 +612,23 @@ export const TestOrderService = {
     try {
       let user = null;
       const userIdToFetch = operatorId || (deleted_by !== 'system' ? deleted_by : null);
-      
+
       if (userIdToFetch) {
         try {
           user = await iamServiceClient.getUserById(userIdToFetch);
         } catch (e) {
-          console.warn("[TestOrderService] Could not fetch user details for monitoring:", e);
+          // ignore user lookup errors
         }
       }
 
       const oldValues = await this.enrichOrderForLog(order.toObject());
+      const snapshot = await buildSnapshotForOrder(oldValues ?? order.toObject());
+      const deleteOldValues = snapshot ? { snapshot } : oldValues ?? null;
 
       await testOrderMonitoringService.recordTestOrderDeleted({
         testOrderId: _id,
         eventMessage: "Test order soft deleted",
-        oldValues: oldValues,
+        oldValues: deleteOldValues,
         newValues: null,
         operatorId: userIdToFetch || deleted_by,
         operatorEmail: user?.email ?? null,
@@ -483,7 +637,7 @@ export const TestOrderService = {
         operatorAvatar: user?.avatar ?? null
       });
     } catch (error) {
-      console.error("[TestOrderService] Failed to log delete event", error);
+      // swallow monitoring failures
     }
 
     return softDeleteTestOrder;

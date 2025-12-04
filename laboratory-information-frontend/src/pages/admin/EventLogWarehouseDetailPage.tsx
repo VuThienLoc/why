@@ -94,6 +94,39 @@ export const EventLogWarehouseDetailPage: React.FC<EventLogWarehouseDetailPagePr
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const renderEntityInfo = (entityInfo: any, type: 'reagent' | 'instrument') => {
+    if (!entityInfo) return null;
+    
+    return (
+      <div className="mb-6 bg-gray-50 p-4 rounded-lg border">
+        <h3 className="font-semibold text-lg text-gray-900 border-b pb-2 mb-4">
+          {type === 'reagent' ? t('eventLog.warehouse.reagentInfo') : t('eventLog.warehouse.instrumentInfo')}
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+          <div>
+            <p className="text-gray-500">
+              {type === 'reagent' ? t('reagent.table.code') : t('eventLog.warehouse.instrumentCode')}
+            </p>
+            <p className="font-medium">{entityInfo.entity_code || '-'}</p>
+          </div>
+          <div>
+            <p className="text-gray-500">
+              {type === 'reagent' ? t('reagent.table.name') : t('eventLog.warehouse.instrumentName')}
+            </p>
+            <p className="font-medium">{entityInfo.entity_name || '-'}</p>
+          </div>
+          <div>
+            <p className="text-gray-500">
+              {type === 'reagent' ? t('eventLog.warehouse.manufacturer') : t('eventLog.warehouse.instrumentType')}
+            </p>
+            <p className="font-medium">{entityInfo.entity_type || '-'}</p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const renderReagentInfo = (data: any, title: string) => {
     const snapshot = normalizeData(data);
     if (!snapshot) return null;
@@ -267,6 +300,7 @@ export const EventLogWarehouseDetailPage: React.FC<EventLogWarehouseDetailPagePr
       if (message.includes('reagent updated')) {
         return (
           <div className="space-y-4">
+            {renderEntityInfo(log.entity_info, 'reagent')}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="border-r pr-4">
                 <h3 className="font-semibold text-lg text-gray-900 border-b pb-2 mb-4">{t('eventLog.iam.oldData')}</h3>
@@ -282,6 +316,7 @@ export const EventLogWarehouseDetailPage: React.FC<EventLogWarehouseDetailPagePr
       }
       return (
         <div className="space-y-4">
+          {renderEntityInfo(log.entity_info, 'instrument')}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="border-r pr-4">
               <h3 className="font-semibold text-lg text-gray-900 border-b pb-2 mb-4">{t('eventLog.iam.oldData')}</h3>

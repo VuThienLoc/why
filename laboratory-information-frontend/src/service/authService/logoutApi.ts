@@ -5,6 +5,9 @@ export async function logoutUser(): Promise<boolean> {
   try {
     const response = await apiService.post("/logout", {});
 
+    // Remove token from localStorage on logout
+    localStorage.removeItem("authToken");
+
     // Nếu backend trả về 204 hoặc 200 → thành công
     if (response) {
       return true;
@@ -12,6 +15,8 @@ export async function logoutUser(): Promise<boolean> {
     return false;
   } catch (error) {
     console.error("Logout failed:", apiUtils.getErrorMessage(error));
+    // Still remove token even if logout request fails
+    localStorage.removeItem("authToken");
     return false;
   }
 }

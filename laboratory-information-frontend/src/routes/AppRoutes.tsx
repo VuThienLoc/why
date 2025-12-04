@@ -8,37 +8,37 @@ import { ProtectedRoute } from "./ProtectedRoute";
 import { useAuthContext } from "../hooks/useAuthContext";
 import { AdminLayout } from "../layouts/AdminLayout";
 import {
-  AdminDashboardPage,
+
   AdminPatientManagementPage,
   AdminAuditReportsPage,
 } from "../pages/admin";
 import { ManagerUserManagementPage } from "../pages/manager";
 import { ManagerLayout } from "../layouts/ManagerLayout";
 import NormalUserLayout from "../layouts/NormalUserLayout";
-import Dashboard from "../pages/NormalUser/Dashboard";
-import TestResults from "../pages/NormalUser/TestResults";
-import ChatPage from "../pages/NormalUser/ChatPage";
-import ChatRoomPage from "../pages/NormalUser/ChatRoomPage";
+import Dashboard from "@/pages/normaluser/Dashboard";
+import TestResults from "@/pages/normaluser/TestResults";
+import ChatPage from "@/pages/normaluser/ChatPage";
+import ChatRoomPage from "@/pages/normaluser/ChatRoomPage";
 import Profile from "../layouts/Profile";
-import LabUserDashboard from "../pages/LabUser/Dashboard";
-import TestOrdersPage from "../pages/LabUser/components/TestOrderComp/TestOrdersPage";
-import CreateTestOrderPage from "../pages/LabUser/components/CreateTestOrder/CreateTestOrderPage";
-import SelectReagentsPage from "../pages/LabUser/components/CreateTestOrder/SelectReagentsPage";
+
+import TestOrdersPage from "@/pages/labuser/components/TestOrderComp/TestOrdersPage";
+import CreateTestOrderPage from "@/pages/labuser/components/CreateTestOrder/CreateTestOrderPage";
+import SelectReagentsPage from "@/pages/labuser/components/CreateTestOrder/SelectReagentsPage";
 import { LabUserLayout } from "../layouts/LabUserLayout";
-import TestResultsPage from "../pages/LabUser/TestResultsPage";
-import ReagentManagementPage from "../pages/LabUser/components/ReagentComp/ReagentManagementPage";
+import TestResultsPage from "@/pages/labuser/TestResultsPage";
+import ReagentManagementPage from "@/pages/labuser/components/ReagentComp/ReagentManagementPage";
 import { ServiceLayout } from "../layouts/ServiceLayout";
-import ServiceDashboardPage from "../pages/service/ServiceDashboardPage";
-import ServiceInstrumentPage from "../pages/service/InstrumentManagementPage";
+
+import ServiceInstrumentPage from "@/pages/service/InstrumentManagementPage";
 import { GoogleCallbackPage } from "../pages/login/GoogleCallbackPage";
 import { ForgotPasswordPage } from "../pages/login/ForgotPasswordPage";
 import { ForgotPasswordSuccessPage } from "../pages/login/ForgotPasswordSuccessPage";
 import { ResetPasswordPage } from "../pages/login/ResetPasswordPage";
-import SelectInstrumentsPage from "../pages/LabUser/components/CreateTestOrder/SelectInstrumentsPage";
+import SelectInstrumentsPage from "@/pages/labuser/components/CreateTestOrder/SelectInstrumentsPage";
 import PatientDetailPage from "@/pages/admin/components/PatientComp/PatientDetailPage";
 import EventLogDetail from "@/pages/admin/EventLogDetail";
 import type { User } from "../types/User";
-import LabUserChatPage from "../pages/LabUser/ChatPage";
+import LabUserChatPage from "@/pages/labuser/ChatPage";
 
 // ============================================================================
 // Type Definitions
@@ -115,9 +115,9 @@ const roleRoutes: Record<string, RoleRouteConfig> = {
     basePath: "/admin",
     allowedRoles: ["ADMIN"],
     Layout: AdminLayout as ComponentType<LayoutProps>,
-    defaultPage: "dashboard",
+    defaultPage: "user-management",
     pages: [
-      { path: "dashboard", component: AdminDashboardPage },
+      // { path: "dashboard", component: AdminDashboardPage },
       { path: "user-management", component: ManagerUserManagementPage },
       { path: "patient-management", component: AdminPatientManagementPage },
       {
@@ -151,9 +151,8 @@ const roleRoutes: Record<string, RoleRouteConfig> = {
     basePath: "/labuser",
     allowedRoles: ["LAB_USER"],
     Layout: LabUserLayout as ComponentType<LayoutProps>,
-    defaultPage: "dashboard",
+    defaultPage: "test-orders",
     pages: [
-      { path: "dashboard", component: LabUserDashboard },
       { path: "patients", component: AdminPatientManagementPage },
       { path: "test-orders", component: TestOrdersPage },
       { path: "test-results", component: TestResultsPage },
@@ -165,15 +164,15 @@ const roleRoutes: Record<string, RoleRouteConfig> = {
       {path : "create-test-order", component: CreateTestOrderPage},
       {path: "select-instruments", component: SelectInstrumentsPage},
       {path: "select-reagents", component: SelectReagentsPage},
+      {path: "audit-reports/:id", component: EventLogDetail},
     ],
   },
   SERVICE: {
     basePath: "/service",
     allowedRoles: ["SERVICE"],
     Layout: ServiceLayout as ComponentType<LayoutProps>,
-    defaultPage: "dashboard",
+    defaultPage: "event-logs",
     pages: [
-      { path: "dashboard", component: ServiceDashboardPage },
       { path: "event-logs", component: AdminAuditReportsPage },
       { path: "reagents", component: ReagentManagementPage },
       { path: "instruments", component: ServiceInstrumentPage },
@@ -185,6 +184,7 @@ const roleRoutes: Record<string, RoleRouteConfig> = {
       { path: "create-test-order", component: CreateTestOrderPage },
       { path: "select-instruments", component: SelectInstrumentsPage },
       { path: "select-reagents", component: SelectReagentsPage },
+      {path: "audit-reports/:id", component: EventLogDetail},
     ],
   },
 };
@@ -307,10 +307,10 @@ export function AppRoutes() {
   // State để track currentPage cho mỗi role
   const [pageStates, setPageStates] = useState<Record<string, string>>({
     USER: "dashboard",
-    ADMIN: "dashboard",
+    ADMIN: "user-management",
     MANAGER: "user-management",
-    LAB_USER: "dashboard",
-    SERVICE: "dashboard",
+    LAB_USER: "test-orders",
+    SERVICE: "event-logs",
   });
 
   // Helper để get page từ pathname

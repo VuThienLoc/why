@@ -4,9 +4,9 @@ import { toast } from 'sonner';
 import { useAuthContext } from '../../../../hooks/useAuthContext';
 import type { TestOrder } from '../../types/TestOrderTypes';
 import { testOrderService } from '../../../../service/testOrderService';
-import TestOrderToolbar from './TestOrderToolbar';
-import TestOrderStatsCards from './TestOrderStatsCards';
-import TestOrderList from './TestOrderList';
+import TestOrderToolbar from '@/pages/labuser/components/TestOrderComp/TestOrderToolbar';
+import TestOrderStatsCards from '@/pages/labuser/components/TestOrderComp/TestOrderStatsCards';
+import TestOrderList from '@/pages/labuser/components/TestOrderComp/TestOrderList';
 import TestOrderFormModal from '../modals/TestOrderModal/TestOrderUpdateModal';
 import DeleteConfirmModal from '../modals/TestOrderModal/TestOrderDeleteModal';
 import TestOrderDetailModal from '../modals/TestOrderModal/TestOrderDetailModal';
@@ -152,7 +152,9 @@ const TestOrdersPage: React.FC = () => {
   ) => {
     try {
       await testOrderService.changeStatus(orderId, newStatus, user?.name ?? 'system');
-      toast.success(`Đã chuyển sang ${newStatus}`);
+      const statusKey = `testOrder.${newStatus.toLowerCase()}` as 'testOrder.pending' | 'testOrder.processing' | 'testOrder.completed';
+      const statusText = t(statusKey);
+      toast.success(t('testOrder.statusChanged', { status: statusText }));
 
       // Optimistic UI – cập nhật ngay, không cần reload
       const updateOrder = (o: TestOrder) =>

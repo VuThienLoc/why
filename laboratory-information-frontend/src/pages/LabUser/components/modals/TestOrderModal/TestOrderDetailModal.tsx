@@ -6,6 +6,7 @@ import { Clock, User, TestTube, Microscope, FlaskConical, List } from 'lucide-re
 import type { TestOrder } from '../../../types/TestOrderTypes';
 import { testItemService, type TestItem } from '../../../../../service/testItemService';
 import { useTranslation } from 'react-i18next';
+import { translateTestType } from '@/pages/labuser/utils/testOrderUtils';
 
 interface TestOrderDetailModalProps {
   order: TestOrder | null;
@@ -132,7 +133,7 @@ const TestOrderDetailModal: React.FC<TestOrderDetailModalProps> = ({
               </h4>
               <div>
                 <span className="text-xs text-gray-500 uppercase tracking-wider">{t('testOrder.detail.testType')}</span>
-                <p className="text-lg font-medium text-gray-900 mt-1">{order.test_type}</p>
+                <p className="text-lg font-medium text-gray-900 mt-1">{translateTestType(order.test_type, t)}</p>
               </div>
             </div>
           </div>

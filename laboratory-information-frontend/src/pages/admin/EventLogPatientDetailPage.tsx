@@ -86,6 +86,18 @@ const EventLogPatientDetailPage: React.FC<EventLogPatientDetailPageProps> = ({ l
   const getSnapshot = (values: unknown): SnapshotData | null => {
     if (!values || typeof values !== 'object') return null;
     const obj = values as Record<string, unknown>;
+    
+    // Handle nested snapshot structure for DELETE_MEDICAL
+    if (obj.snapshot && typeof obj.snapshot === 'object') {
+      const snap = obj.snapshot as Record<string, unknown>;
+      if (snap.medical_record && typeof snap.medical_record === 'object') {
+        const nestedMedical = snap.medical_record as Record<string, unknown>;
+        if (nestedMedical.snapshot) {
+           return nestedMedical.snapshot as SnapshotData;
+        }
+      }
+    }
+
     const snapshot = obj.snapshot as SnapshotData | undefined;
     return snapshot || null;
   };
@@ -323,6 +335,110 @@ const EventLogPatientDetailPage: React.FC<EventLogPatientDetailPageProps> = ({ l
     );
   };
 
+  const renderPatientSummary = (snapshot: SnapshotData | null) => {
+    if (!snapshot) return null;
+    const { user, patient } = snapshot;
+    if (!user && !patient) return null;
+
+    return (
+      <div className="space-y-4">
+        <h3 className="font-semibold text-lg text-gray-900 border-b pb-2">
+          {t('eventLog.patient.patientInfo')}
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          {patient?.code && (
+            <div>
+              <p className="text-gray-500">{t('eventLog.patient.patientCode')}</p>
+              <p className="font-medium">{patient.code}</p>
+            </div>
+          )}
+          {user?.fullName && (
+            <div>
+              <p className="text-gray-500">{t('eventLog.iam.fullName')}</p>
+              <p className="font-medium">{user.fullName}</p>
+            </div>
+          )}
+          {user?.email && (
+            <div>
+              <p className="text-gray-500">{t('eventLog.iam.email')}</p>
+              <p className="font-medium">{user.email}</p>
+            </div>
+          )}
+          {user?.identityNumber && (
+            <div>
+              <p className="text-gray-500">{t('eventLog.iam.identityNumber')}</p>
+              <p className="font-medium">{user.identityNumber}</p>
+            </div>
+          )}
+          {user?.phoneNumber && (
+            <div>
+              <p className="text-gray-500">{t('eventLog.iam.phone')}</p>
+              <p className="font-medium">{user.phoneNumber}</p>
+            </div>
+          )}
+          {user?.gender && (
+            <div>
+              <p className="text-gray-500">{t('eventLog.iam.gender')}</p>
+              <p className="font-medium">{user.gender === 'male' ? t('eventLog.iam.male') : user.gender === 'female' ? t('eventLog.iam.female') : user.gender}</p>
+            </div>
+          )}
+          {user?.dateOfBirth && (
+            <div>
+              <p className="text-gray-500">{t('eventLog.iam.dob')}</p>
+              <p className="font-medium">{formatDateOnly(user.dateOfBirth)}</p>
+            </div>
+          )}
+          {user?.address && (
+            <div>
+              <p className="text-gray-500">{t('eventLog.iam.address')}</p>
+              <p className="font-medium">{user.address}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderMedicalRecordSummary = (snapshot: SnapshotData | null) => {
+    if (!snapshot) return null;
+    const { user, medical_record } = snapshot;
+    if (!user && !medical_record) return null;
+
+    return (
+      <div className="space-y-4">
+        <h3 className="font-semibold text-lg text-gray-900 border-b pb-2">
+          {t('eventLog.patient.recordInfo')}
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          {medical_record?.record_code && (
+            <div>
+              <p className="text-gray-500">{t('eventLog.patient.recordCode')}</p>
+              <p className="font-medium">{medical_record.record_code}</p>
+            </div>
+          )}
+          {user?.fullName && (
+            <div>
+              <p className="text-gray-500">{t('eventLog.iam.fullName')}</p>
+              <p className="font-medium">{user.fullName}</p>
+            </div>
+          )}
+          {user?.identityNumber && (
+            <div>
+              <p className="text-gray-500">{t('eventLog.iam.identityNumber')}</p>
+              <p className="font-medium">{user.identityNumber}</p>
+            </div>
+          )}
+          {user?.email && (
+            <div>
+              <p className="text-gray-500">{t('eventLog.iam.email')}</p>
+              <p className="font-medium">{user.email}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const renderEventContent = () => {
     if (!log || !eventType) return null;
     switch (eventType) {
@@ -343,32 +459,40 @@ const EventLogPatientDetailPage: React.FC<EventLogPatientDetailPageProps> = ({ l
         return renderMedicalRecordInfo(snapshot, t('eventLog.patient.deletedMedical'));
       }
       case 'UPDATE_PATIENT_EMERGENCY': {
+        const snapshot = getSnapshot(log.new_values);
         return (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="border-r pr-4">
-                <h3 className="font-semibold text-lg text-gray-900 border-b pb-2 mb-4">{t('eventLog.iam.oldData')}</h3>
-                {renderEmergencyContactInfo(log.old_values)}
-              </div>
-              <div className="pl-4">
-                <h3 className="font-semibold text-lg text-gray-900 border-b pb-2 mb-4">{t('eventLog.iam.newData')}</h3>
-                {renderEmergencyContactInfo(log.new_values)}
+          <div className="space-y-6">
+            {renderPatientSummary(snapshot)}
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="border-r pr-4">
+                  <h3 className="font-semibold text-lg text-gray-900 border-b pb-2 mb-4">{t('eventLog.iam.oldData')}</h3>
+                  {renderEmergencyContactInfo(log.old_values)}
+                </div>
+                <div className="pl-4">
+                  <h3 className="font-semibold text-lg text-gray-900 border-b pb-2 mb-4">{t('eventLog.iam.newData')}</h3>
+                  {renderEmergencyContactInfo(log.new_values)}
+                </div>
               </div>
             </div>
           </div>
         );
       }
       case 'UPDATE_MEDICAL': {
+        const snapshot = getSnapshot(log.new_values);
         return (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="border-r pr-4">
-                <h3 className="font-semibold text-lg text-gray-900 border-b pb-2 mb-4">{t('eventLog.iam.oldData')}</h3>
-                {renderMedicalRecordUpdate(log.old_values)}
-              </div>
-              <div className="pl-4">
-                <h3 className="font-semibold text-lg text-gray-900 border-b pb-2 mb-4">{t('eventLog.iam.newData')}</h3>
-                {renderMedicalRecordUpdate(log.new_values)}
+          <div className="space-y-6">
+            {renderMedicalRecordSummary(snapshot)}
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="border-r pr-4">
+                  <h3 className="font-semibold text-lg text-gray-900 border-b pb-2 mb-4">{t('eventLog.iam.oldData')}</h3>
+                  {renderMedicalRecordUpdate(log.old_values)}
+                </div>
+                <div className="pl-4">
+                  <h3 className="font-semibold text-lg text-gray-900 border-b pb-2 mb-4">{t('eventLog.iam.newData')}</h3>
+                  {renderMedicalRecordUpdate(log.new_values)}
+                </div>
               </div>
             </div>
           </div>

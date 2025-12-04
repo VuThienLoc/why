@@ -1,27 +1,41 @@
-import axios, { type AxiosInstance, isAxiosError } from 'axios';
-import { apiService } from './apiClient';
+import axios, { isAxiosError } from 'axios';
 
-const PATIENT_SERVICE_URL = import.meta.env.VITE_PATIENT_SERVICE_URL || 'http://localhost:5001';
+const PATIENT_SERVICE_URL =
+  import.meta.env.VITE_API_PATIENT_SERVICE_URL || 'http://localhost:5001';
 
-const pmrApiClient: AxiosInstance = axios.create({
+// Create axios instance
+const pmrClient = axios.create({
   baseURL: PATIENT_SERVICE_URL,
   timeout: 10000,
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
+  validateStatus: (status) => status >= 200 && status < 500,
 });
 
-pmrApiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('authToken');
-  if (token) {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    config.headers = config.headers || {};
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    config.headers.Authorization = `Bearer ${token}`;
+const getTokenFromCookie = (): string | null => {
+  const cookies = document.cookie.split(';');
+  for (const cookie of cookies) {
+    const [name, value] = cookie.trim().split('=');
+    if (name === 'accessToken') {
+      return value;
+    }
   }
-  return config;
-});
+  return null;
+};
+
+// Attach Authorization header
+pmrClient.interceptors.request.use(
+  (config) => {
+    const token = getTokenFromCookie();
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 
 export interface PMRPatientEmbed {
   _id?: string;
@@ -71,197 +85,95 @@ export interface PMRListResponse {
   totalPages?: number;
 }
 
-const ENDPOINTS = {
-  list: ['/api/patient-medical-records/getAll', '/patient-medical-records/getAll'],
-  detail: (id: string) => [`/api/patient-medical-records/viewDetail/${id}`, `/patient-medical-records/viewDetail/${id}`],
-};
 
-async function tryGet<T>(path: string): Promise<T> {
-  // Helper: strip '/api' prefix for alt paths
-  const stripApi = (p: string) => (p.startsWith('/api/') ? p.replace('/api/', '/') : p);
-  const altPath = stripApi(path);
-
-  // Try authenticated to 5001
-  try {
-    const res = await pmrApiClient.get<T>(path);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (res as any).data as T;
-  } catch {
-    // Try authenticated to 5001 with stripped '/api'
-    try {
-      const res2 = await pmrApiClient.get<T>(altPath);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return (res2 as any).data as T;
-  } catch {
-      // Try anonymous (no Authorization header) to 5001
-      try {
-        const anon = axios.create({ baseURL: PATIENT_SERVICE_URL, withCredentials: true });
-        const res3 = await anon.get<T>(path);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return (res3 as any).data as T;
-  } catch {
-        try {
-          const anon = axios.create({ baseURL: PATIENT_SERVICE_URL, withCredentials: true });
-          const res4 = await anon.get<T>(altPath);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return (res4 as any).data as T;
-        } catch {
-          // Final fallback to main API service (likely 3000)
-          return await apiService.get<T>(path);
-        }
-      }
-    }
-  }
-}
-
-const DEFAULT_PMR_ERROR = 'Không thể tạo hồ sơ y tế. Vui lòng thử lại.';
-
-function extractErrorMessage(error: unknown, fallback = DEFAULT_PMR_ERROR): string {
-  const normalize = (value: unknown): string | undefined => {
-    if (typeof value === 'string' && value.trim()) return value.trim();
-    if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-    return undefined;
-  };
-
+function extractErrorMessage(error: unknown): string {
   if (isAxiosError(error)) {
-    const data = error.response?.data as Record<string, unknown> | string | undefined;
-    const topLevelMessage = normalize(data);
-    if (topLevelMessage) return topLevelMessage;
-
-    if (data && typeof data === 'object') {
-      const nestedRaw = (data as { error?: unknown }).error ?? (data as { message?: unknown }).message;
-      const nestedMessage = normalize(nestedRaw);
-      if (nestedMessage) return nestedMessage;
-
-      const detailsRaw = (data as { details?: { message?: unknown } }).details?.message;
-      const detailsMessage = normalize(detailsRaw);
-      if (detailsMessage) return detailsMessage;
-
-      if ('errors' in data && Array.isArray((data as { errors?: unknown }).errors)) {
-        const firstError = (data as { errors?: unknown[] }).errors?.[0];
-        const firstMessage = normalize(firstError);
-        if (firstMessage) return firstMessage;
-      }
-    }
-
     const status = error.response?.status;
-    if (status === 404) return 'Bệnh nhân đã có hồ sơ y tế.';
+    if (status === 404) return 'Không tìm thấy hồ sơ y tế.';
     if (status === 401) return 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
-    if (status === 403) return 'Bạn không có quyền thực hiện thao tác này (403).';
-    if (status) return `Yêu cầu thất bại (HTTP ${status}).`;
+    if (status === 403) return 'Bạn không có quyền thực hiện thao tác này.';
 
-    if (normalize(error.message)) return error.message as string;
+    const data = error.response?.data as { message?: string; error?: string } | undefined;
+    if (data?.message) return data.message;
+    if (data?.error) return data.error;
   }
 
-  if (error instanceof Error && normalize(error.message)) return error.message;
-  const fallbackMessage = normalize(error);
-  if (fallbackMessage) return fallbackMessage;
-  return fallback;
+  if (error instanceof Error) return error.message;
+  return 'Không thể thực hiện thao tác. Vui lòng thử lại.';
 }
 
-function isPMRListResponse(v: unknown): v is PMRListResponse {
-  if (!v || typeof v !== 'object') return false;
-  const obj = v as Record<string, unknown>;
-  return Array.isArray(obj.records);
-}
 
-type AltPMRListResponse = {
-  data?: PatientMedicalRecord[];
-  items?: PatientMedicalRecord[];
-  total?: number;
-  totalCount?: number;
-  page?: number;
-  limit?: number;
-  totalPages?: number;
-  total_pages?: number;
-};
+export class PatientMedicalRecordService {
+  // GET /patient-medical-records/getAll/ 
+  async getAll(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    patientId?: string;
+  }): Promise<PMRListResponse> {
+    try {
+      const page = params?.page ?? 1;
+      const limit = params?.limit ?? 10;
 
-function isAltPMRList(v: unknown): v is AltPMRListResponse {
-  if (!v || typeof v !== 'object') return false;
-  const obj = v as Record<string, unknown>;
-  return Array.isArray(obj.data as unknown[]) || Array.isArray(obj.items as unknown[]);
-}
+      const queryParams = new URLSearchParams();
+      queryParams.append('page', page.toString());
+      queryParams.append('limit', limit.toString());
+      if (params?.search) queryParams.append('search', params.search);
+      if (params?.patientId) queryParams.append('patientId', params.patientId);
 
-export const patientMedicalRecordService = {
-  async getAll(params?: { page?: number; limit?: number; search?: string; sort?: string; testType?: string; instrument?: string; fromDate?: string; toDate?: string; patientId?: string; }): Promise<PMRListResponse> {
-    const page = params?.page ?? 1;
-    const limit = params?.limit ?? 10;
-  const q: Record<string, string> = { page: String(page), limit: String(limit) };
-    if (params?.search) q.search = params.search;
-    if (params?.sort) q.sort = params.sort;
-    if (params?.testType) q.testType = params.testType;
-    if (params?.instrument) q.instrument = params.instrument;
-    if (params?.fromDate) q.fromDate = params.fromDate;
-    if (params?.toDate) q.toDate = params.toDate;
-    if (params?.patientId) {
-      q.patientId = params.patientId;
-      // also send alternate param commonly used by backends
-      q.patient_id = params.patientId;
-    }
-    const query = `?${new URLSearchParams(q).toString()}`;
+      const endpoint = `/api/patient-medical-records/getAll/?${queryParams.toString()}`;
+      const response = await pmrClient.get(endpoint);
 
-    // Try a wide range of possible list endpoints
-    const candidates = [
-      ...ENDPOINTS.list,
-      '/api/patient-medical-records',
-      '/patient-medical-records',
-      '/api/patient-medical-records/list',
-      '/patient-medical-records/list',
-      // possible custom endpoints by patient
-      `/api/patient-medical-records/by-patient/${params?.patientId ?? ''}`,
-      `/patient-medical-records/by-patient/${params?.patientId ?? ''}`,
-    ];
-
-    for (const base of candidates) {
-      try {
-        const data = await tryGet<unknown>(`${base}${query}`);
-        if (isPMRListResponse(data)) return data;
-        if (isAltPMRList(data)) {
-          return {
-            records: (data.data || data.items) ?? [],
-            total: data.total ?? data.totalCount,
-            page: data.page ?? page,
-            limit: data.limit ?? limit,
-            totalPages: data.totalPages ?? data.total_pages,
-          };
-        }
-      } catch {
-        // try next
+      // Check status
+      if (response.status === 401 || response.status === 404) {
+        return { records: [], total: 0, page, limit, totalPages: 0 };
       }
-    }
-    return { records: [], total: 0, page, limit, totalPages: 0 };
-  },
 
-  async getDetail(id: string): Promise<PatientMedicalRecord | null> {
-    const candidates = [
-      ...ENDPOINTS.detail(id),
-      `/api/patient-medical-records/${id}`,
-      `/patient-medical-records/${id}`,
-      `/api/patient-medical-records/view-detail/${id}`,
-      `/patient-medical-records/view-detail/${id}`,
-      `/api/patient-medical-records/view/${id}`,
-      `/patient-medical-records/view/${id}`,
-    ];
-    for (const path of candidates) {
-      try {
-        const data = await tryGet<unknown>(path);
-        if (data && typeof data === 'object') {
-          const obj = data as Record<string, unknown>;
-          // Normalize: direct object, { record: {...} }, { data: {...} }
-          const candidate = (obj.record && typeof obj.record === 'object')
-            ? (obj.record as PatientMedicalRecord)
-            : (obj.data && typeof obj.data === 'object')
-              ? (obj.data as PatientMedicalRecord)
-              : (data as PatientMedicalRecord);
-          if (candidate && typeof candidate._id === 'string') return candidate;
-        }
-      } catch {
-        // try next
+      const data = response.data;
+      // Normalize response
+      const records = data?.records || data?.data || data?.items || [];
+      return {
+        records: Array.isArray(records) ? records : [],
+        total: data?.total ?? data?.totalCount ?? 0,
+        page: data?.page ?? page,
+        limit: data?.limit ?? limit,
+        totalPages: data?.totalPages ?? data?.total_pages ?? 0,
+      };
+    } catch (error) {
+      console.error('Error fetching patient medical records:', error);
+      return { records: [], total: 0, page: 1, limit: 10, totalPages: 0 };
+    }
+  }
+
+  // GET /patient-medical-records/viewDetail/{id} 
+  async viewDetail(id: string): Promise<PatientMedicalRecord | null> {
+    try {
+      if (!id) return null;
+
+      const endpoint = `/api/patient-medical-records/viewDetail/${id}`;
+      const response = await pmrClient.get(endpoint);
+
+      // Check status
+      if (response.status === 401 || response.status === 404) {
+        return null;
       }
-    }
-    return null;
-  },
 
+      const data = response.data;
+      // Normalize: { record: {...} } | { data: {...} } | direct object
+      const record = data?.record || data?.data || data;
+
+      if (!record || record.is_deleted) {
+        return null;
+      }
+
+      return record;
+    } catch (error) {
+      console.error('Error fetching patient medical record detail:', error);
+      return null;
+    }
+  }
+
+  // POST /patient-medical-records/create/ 
   async create(payload: {
     patient_id: string;
     blood_type?: string;
@@ -271,105 +183,92 @@ export const patientMedicalRecordService = {
     medical_history?: string;
     clinical_notes?: string;
     recent_test_summary?: string;
-  }): Promise<PatientMedicalRecord | null> {
-    const candidates = [
-      '/api/patient-medical-records/create',
-      '/patient-medical-records/create',
-    ];
-    let lastError: unknown = null;
-    for (const path of candidates) {
-      try {
-        const res = await pmrApiClient.post(path, payload);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const data = (res as any).data ?? res;
-        if (data && typeof data === 'object') {
-          const obj = data as Record<string, unknown>;
-          const candidate = (obj.record && typeof obj.record === 'object')
-            ? (obj.record as PatientMedicalRecord)
-            : (obj.data && typeof obj.data === 'object')
-              ? (obj.data as PatientMedicalRecord)
-              : (data as PatientMedicalRecord);
-          if (candidate && typeof candidate._id === 'string') return candidate;
-        }
-      } catch (primaryError) {
-        lastError = primaryError;
-        try {
-          const data = await apiService.post<PatientMedicalRecord>(path, payload);
-          // apiService returns parsed data directly
-          if (data && (data as unknown as PatientMedicalRecord)._id) return data as unknown as PatientMedicalRecord;
-        } catch (fallbackError) {
-          lastError = fallbackError;
-          // try next
-        }
-      }
-    }
-    if (lastError) {
-      throw new Error(extractErrorMessage(lastError));
-    }
-    return null;
-  },
+  }): Promise<PatientMedicalRecord> {
+    const endpoint = `/api/patient-medical-records/create/`;
+    const response = await pmrClient.post(endpoint, payload);
 
-  async update(id: string, payload: {
-    blood_type?: string;
-    allergies?: string;
-    chronic_conditions?: string;
-    current_medications?: string;
-    medical_history?: string;
-    clinical_notes?: string;
-    recent_test_summary?: string;
-  }): Promise<PatientMedicalRecord | null> {
-    const candidates = [
-      `/api/patient-medical-records/update/${id}`,
-      `/patient-medical-records/update/${id}`,
-    ];
-    for (const path of candidates) {
-      try {
-        const res = await pmrApiClient.put(path, payload);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const data = (res as any).data ?? res;
-        if (data && typeof data === 'object') {
-          const obj = data as Record<string, unknown>;
-          const candidate = (obj.record && typeof obj.record === 'object')
-            ? (obj.record as PatientMedicalRecord)
-            : (obj.data && typeof obj.data === 'object')
-              ? (obj.data as PatientMedicalRecord)
-              : (data as PatientMedicalRecord);
-          if (candidate && typeof candidate._id === 'string') return candidate;
-        }
-      } catch {
-        try {
-          const data = await apiService.put<PatientMedicalRecord>(path, payload);
-          if (data && (data as unknown as PatientMedicalRecord)._id) return data as unknown as PatientMedicalRecord;
-        } catch {
-          // try next
-        }
-      }
+    // Check status
+    if (response.status === 401) {
+      throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
     }
-    return null;
-  },
+
+    if (response.status >= 400) {
+      const errorMsg = response.data?.message || response.data?.error || 'Không thể tạo hồ sơ y tế';
+      throw new Error(errorMsg);
+    }
+
+    const data = response.data;
+    const record = data?.record || data?.data || data;
+
+    if (!record || !record._id) {
+      throw new Error('Không thể tạo hồ sơ y tế. Vui lòng thử lại.');
+    }
+
+    return record;
+  }
+
+  // PUT /patient-medical-records/update/{id} 
+  async update(
+    id: string,
+    payload: {
+      blood_type?: string;
+      allergies?: string;
+      chronic_conditions?: string;
+      current_medications?: string;
+      medical_history?: string;
+      clinical_notes?: string;
+      recent_test_summary?: string;
+    }
+  ): Promise<PatientMedicalRecord | null> {
+    try {
+      if (!id) return null;
+
+      const endpoint = `/api/patient-medical-records/update/${id}`;
+      const response = await pmrClient.put(endpoint, payload);
+
+      // Check status
+      if (response.status === 401 || response.status === 404) {
+        return null;
+      }
+
+      const data = response.data;
+      const record = data?.record || data?.data || data;
+
+      return record || null;
+    } catch (error) {
+      console.error('Error updating patient medical record:', error);
+      throw new Error(extractErrorMessage(error));
+    }
+  }
+
+  // DELETE /patient-medical-records/delete/{id} 
+  async delete(id: string): Promise<boolean> {
+    try {
+      if (!id) return false;
+
+      const endpoint = `/api/patient-medical-records/delete/${id}`;
+      const response = await pmrClient.delete(endpoint);
+
+      // Success if 2xx
+      return response.status >= 200 && response.status < 300;
+    } catch (error) {
+      console.error('Error deleting patient medical record:', error);
+      return false;
+    }
+  }
+
+  // Alias for backward compatibility
+  async getDetail(id: string): Promise<PatientMedicalRecord | null> {
+    return this.viewDetail(id);
+  }
 
   async remove(id: string): Promise<boolean> {
-    const candidates = [
-      `/api/patient-medical-records/delete/${id}`,
-      `/patient-medical-records/delete/${id}`,
-    ];
-    for (const path of candidates) {
-      try {
-        const res = await pmrApiClient.delete(path);
-        // success if 2xx
-        if (res.status >= 200 && res.status < 300) return true;
-      } catch {
-        try {
-          await apiService.delete(path);
-          return true;
-        } catch {
-          // try next
-        }
-      }
-    }
-    return false;
-  },
-};
+    return this.delete(id);
+  }
+}
+
+// Export singleton instance
+export const patientMedicalRecordService = new PatientMedicalRecordService();
 
 export default patientMedicalRecordService;
 

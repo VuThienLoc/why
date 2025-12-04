@@ -209,7 +209,7 @@ export function UserTable({ users, onView, onEdit, onDelete, onToggleLock, onFir
                   >
                     <td className="py-2.5 sm:py-3 px-3 sm:px-4">
                       <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold text-xs sm:text-sm flex-shrink-0">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold text-xs sm:text-sm flex-shrink-0 overflow-hidden">
                           {user.avatar ? (
                             <img
                               src={user.avatar}

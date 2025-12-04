@@ -12,9 +12,9 @@ import { Label } from '../../../../../components/common/label';
 import { Input } from '../../../../../components/common/input';
 import { toast } from 'sonner';
 import { FlaskConical, Tag, Factory, MapPin, Calendar, Scale, AlertTriangle } from 'lucide-react';
-import { validateReagentForm } from '../../../types/Reagent.ts';
-import type { ReagentFormData } from '../../../types/Reagent.ts';
-import type { Reagent } from '../../../types/Reagent.ts';
+import { validateReagentForm } from '@/pages/labuser/types/Reagent';
+import type { ReagentFormData } from '@/pages/labuser/types/Reagent';
+import type { Reagent } from '@/pages/labuser/types/Reagent';
 import { useTranslation } from 'react-i18next';
 
 interface ReagentAddModalProps {
@@ -60,7 +60,7 @@ export default function ReagentAddModal({
     }, [isOpen]);
 
     const handleFieldChange = (field: keyof ReagentFormData, value: string | number) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
+        setFormData((prev: ReagentFormData) => ({ ...prev, [field]: value }));
         if (errors[field]) {
             setErrors(prev => {
                 const newErrors = { ...prev };

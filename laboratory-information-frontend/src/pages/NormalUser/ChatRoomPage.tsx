@@ -254,8 +254,8 @@ const ChatRoomPage: React.FC = () => {
         )}
       </div>
 
-      <div className="px-6 py-4 border-t border-gray-200 bg-white sticky bottom-0 z-10">
-        <div className="flex gap-3 items-center">
+      <div className="px-6 py-4 border-t border-gray-200 bg-white sticky bottom-0 z-[105]">
+        <div className="flex gap-3 items-center pr-20 sm:pr-24">
           <Input
             type="text"
             placeholder="Nhập tin nhắn..."
@@ -273,7 +273,7 @@ const ChatRoomPage: React.FC = () => {
           <Button
             onClick={handleSendMessage}
             disabled={!newMessage.trim() || sending}
-            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed shadow-sm flex-shrink-0"
           >
             {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </Button>

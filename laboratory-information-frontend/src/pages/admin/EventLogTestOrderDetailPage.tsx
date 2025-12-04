@@ -129,8 +129,313 @@ export const EventLogTestOrderDetailPage: React.FC<EventLogTestOrderDetailPagePr
     );
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const renderTestOrderCreate = (data: any) => {
+    const snapshot = data?.snapshot;
+    if (!snapshot) return renderTestOrderInfo(data, t('eventLog.testOrder.createdOrder'));
+
+    const order = snapshot.order || {};
+    const user = snapshot.user || {};
+
+    return (
+      <div className="space-y-6">
+        {/* New Section: Patient Information */}
+        <div className="space-y-4">
+          <h3 className="font-semibold text-lg text-gray-900 border-b pb-2">
+             {t('eventLog.testOrder.patientInfo')}
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="text-gray-500">{t('eventLog.testOrder.patientName')}</p>
+              <p className="font-medium">{user.fullName || '-'}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">Email</p>
+              <p className="font-medium">{user.email || '-'}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Existing Section: Test Order Information */}
+        <div className="space-y-4">
+          <h3 className="font-semibold text-lg text-gray-900 border-b pb-2">{t('eventLog.testOrder.createdOrder')}</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            
+            {order.testType && (
+              <div>
+                <p className="text-gray-500">{t('eventLog.testOrder.testType')}</p>
+                <p className="font-medium">{order.testType}</p>
+              </div>
+            )}
+            {order.instrumentName && (
+              <div>
+                <p className="text-gray-500">{t('eventLog.testOrder.instrumentName')}</p>
+                <p className="font-medium">{order.instrumentName}</p>
+              </div>
+            )}
+            {order.status && (
+              <div>
+                <p className="text-gray-500">{t('eventLog.testOrder.status')}</p>
+                <p className="font-medium">{t(`status.${order.status}`, { defaultValue: order.status })}</p>
+              </div>
+            )}
+            {order.dueDate && (
+              <div>
+                <p className="text-gray-500">{t('eventLog.testOrder.dueDate')}</p>
+                <p className="font-medium">{formatDateOnly(order.dueDate)}</p>
+              </div>
+            )}
+            {order.notes && (
+              <div className="md:col-span-2">
+                <p className="text-gray-500">{t('eventLog.testOrder.notes')}</p>
+                <p className="font-medium">{order.notes}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderTestOrderUpdate = (log: EventLog) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const snapshot = (log.new_values as any)?.snapshot;
+    const order = snapshot?.order || {};
+    const user = snapshot?.user || {};
+
+    return (
+      <div className="space-y-6">
+        {/* Test Order Information Summary */}
+        {snapshot && (
+          <div className="space-y-4">
+            <h3 className="font-semibold text-lg text-gray-900 border-b pb-2">
+              {t('eventLog.testOrder.orderInfo')}
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-gray-500">{t('eventLog.testOrder.patientName')}</p>
+                <p className="font-medium">{user.fullName || '-'}</p>
+              </div>
+              {order.barcode && (
+                <div>
+                  <p className="text-gray-500">Barcode</p>
+                  <p className="font-medium">{order.barcode}</p>
+                </div>
+              )}
+              {/* {order.testType && (
+                <div>
+                  <p className="text-gray-500">{t('eventLog.testOrder.testType')}</p>
+                  <p className="font-medium">{order.testType}</p>
+                </div>
+              )}
+              {order.instrumentName && (
+                <div>
+                  <p className="text-gray-500">{t('eventLog.testOrder.instrumentName')}</p>
+                  <p className="font-medium">{order.instrumentName}</p>
+                </div>
+              )}
+              {order.status && (
+                <div>
+                  <p className="text-gray-500">{t('eventLog.testOrder.status')}</p>
+                  <p className="font-medium">{t(`status.${order.status}`, { defaultValue: order.status })}</p>
+                </div>
+              )}
+              {order.dueDate && (
+                <div>
+                  <p className="text-gray-500">{t('eventLog.testOrder.dueDate')}</p>
+                  <p className="font-medium">{formatDateOnly(order.dueDate)}</p>
+                </div>
+              )}
+              {order.notes && (
+                <div className="md:col-span-2">
+                  <p className="text-gray-500">{t('eventLog.testOrder.notes')}</p>
+                  <p className="font-medium">{order.notes}</p>
+                </div>
+              )} */}
+            </div>
+          </div>
+        )}
+
+        {/* Comparison Section */}
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="border-r pr-4">
+              <h3 className="font-semibold text-lg text-gray-900 border-b pb-2 mb-4">{t('eventLog.iam.oldData')}</h3>
+              {renderTestOrderInfo(log.old_values, '')}
+            </div>
+            <div className="pl-4">
+              <h3 className="font-semibold text-lg text-gray-900 border-b pb-2 mb-4">{t('eventLog.iam.newData')}</h3>
+              {renderTestOrderInfo(log.new_values, '')}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderTestOrderStatusUpdate = (log: EventLog) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const snapshot = (log.new_values as any)?.snapshot;
+    const order = snapshot?.order || {};
+    const user = snapshot?.user || {};
+
+    return (
+      <div className="space-y-6">
+        {/* Test Order Information Summary */}
+        {snapshot && (
+          <div className="space-y-4">
+            <h3 className="font-semibold text-lg text-gray-900 border-b pb-2">
+              {t('eventLog.testOrder.statusUpdateInfo')}
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-gray-500">{t('eventLog.testOrder.patientName')}</p>
+                <p className="font-medium">{user.fullName || '-'}</p>
+              </div>
+              {order.barcode && (
+                <div>
+                  <p className="text-gray-500">Barcode</p>
+                  <p className="font-medium">{order.barcode}</p>
+                </div>
+              )}
+              {order.testType && (
+                <div>
+                  <p className="text-gray-500">{t('eventLog.testOrder.testType')}</p>
+                  <p className="font-medium">{order.testType}</p>
+                </div>
+              )}
+              {order.instrumentName && (
+                <div>
+                  <p className="text-gray-500">{t('eventLog.testOrder.instrumentName')}</p>
+                  <p className="font-medium">{order.instrumentName}</p>
+                </div>
+              )}
+              {/* {order.status && (
+                <div>
+                  <p className="text-gray-500">{t('eventLog.testOrder.status')}</p>
+                  <p className="font-medium">{t(`status.${order.status}`, { defaultValue: order.status })}</p>
+                </div>
+              )} */}
+              {order.dueDate && (
+                <div>
+                  <p className="text-gray-500">{t('eventLog.testOrder.dueDate')}</p>
+                  <p className="font-medium">{formatDateOnly(order.dueDate)}</p>
+                </div>
+              )}
+              {order.notes && (
+                <div className="md:col-span-2">
+                  <p className="text-gray-500">{t('eventLog.testOrder.notes')}</p>
+                  <p className="font-medium">{order.notes}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Comparison Section */}
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="border-r pr-4">
+              <h3 className="font-semibold text-lg text-gray-900 border-b pb-2 mb-4">{t('eventLog.iam.oldData')}</h3>
+              {renderTestOrderInfo(log.old_values, '')}
+            </div>
+            <div className="pl-4">
+              <h3 className="font-semibold text-lg text-gray-900 border-b pb-2 mb-4">{t('eventLog.iam.newData')}</h3>
+              {renderTestOrderInfo(log.new_values, '')}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const renderTestOrderDelete = (data: any) => {
+    const snapshot = data?.snapshot;
+    if (!snapshot) return renderTestOrderInfo(data, t('eventLog.testOrder.deletedOrder'));
+
+    const order = snapshot.order || {};
+    const user = snapshot.user || {};
+
+    return (
+      <div className="space-y-6">
+        {/* New Section: Patient Information */}
+        <div className="space-y-4">
+          <h3 className="font-semibold text-lg text-gray-900 border-b pb-2">
+             {t('eventLog.testOrder.patientInfo')}
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="text-gray-500">{t('eventLog.testOrder.patientName')}</p>
+              <p className="font-medium">{user.fullName || '-'}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">Email</p>
+              <p className="font-medium">{user.email || '-'}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Existing Section: Test Order Information */}
+        <div className="space-y-4">
+          <h3 className="font-semibold text-lg text-gray-900 border-b pb-2">{t('eventLog.testOrder.deletedOrder')}</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            
+            {order.testType && (
+              <div>
+                <p className="text-gray-500">{t('eventLog.testOrder.testType')}</p>
+                <p className="font-medium">{order.testType}</p>
+              </div>
+            )}
+            {order.instrumentName && (
+              <div>
+                <p className="text-gray-500">{t('eventLog.testOrder.instrumentName')}</p>
+                <p className="font-medium">{order.instrumentName}</p>
+              </div>
+            )}
+            {order.status && (
+              <div>
+                <p className="text-gray-500">{t('eventLog.testOrder.status')}</p>
+                <p className="font-medium">{t(`status.${order.status}`, { defaultValue: order.status })}</p>
+              </div>
+            )}
+            {order.dueDate && (
+              <div>
+                <p className="text-gray-500">{t('eventLog.testOrder.dueDate')}</p>
+                <p className="font-medium">{formatDateOnly(order.dueDate)}</p>
+              </div>
+            )}
+            {order.notes && (
+              <div className="md:col-span-2">
+                <p className="text-gray-500">{t('eventLog.testOrder.notes')}</p>
+                <p className="font-medium">{order.notes}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderEventContent = () => {
     const action = String(log.action ?? '').toUpperCase();
+    const message = log.event_message || '';
+    
+    if (action === 'CREATE' && message === 'Test order created') {
+       return renderTestOrderCreate(log.new_values);
+    }
+
+    if (action === 'DELETE' && message === 'Test order soft deleted') {
+       return renderTestOrderDelete(log.old_values);
+    }
+
+    if (action === 'UPDATE' && message === 'Test order updated') {
+       return renderTestOrderUpdate(log);
+    }
+
+    if (action === 'UPDATE' && message.startsWith('Test order status updated to')) {
+       return renderTestOrderStatusUpdate(log);
+    }
     
     if (action === 'CREATE') {
       return renderTestOrderInfo(log.new_values, t('eventLog.testOrder.createdOrder'));

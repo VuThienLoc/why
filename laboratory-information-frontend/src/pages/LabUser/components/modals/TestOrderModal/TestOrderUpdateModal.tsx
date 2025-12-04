@@ -12,7 +12,7 @@ import { patientService, type PatientOption } from '../../../../../service/patie
 import { instrumentsService } from '../../../../../service/instrumentsService';
 import { reagentService } from '../../../../../service/reagentService';
 import type { Instrument } from '../../../../service/types/Instrument';
-import type { Reagent } from '../../../types/Reagent.ts';
+import type { Reagent } from '@/pages/labuser/types/Reagent';
 import { SearchableDropdown } from '../../common/SearchableDropdown.tsx';
 import { SearchableMultiSelect } from '../../common/SearchableMultiSelect.tsx';
 import { toast } from 'sonner';

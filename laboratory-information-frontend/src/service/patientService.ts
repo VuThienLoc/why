@@ -1,41 +1,41 @@
-import axios from 'axios';
-import type { AxiosInstance } from 'axios';
-import { apiUtils, apiService, apiClient } from './apiClient';
+import axios, { isAxiosError } from 'axios';
 
-// Create a dedicated axios instance for Patient service
-// Patient service runs on port 5001 independently
-const PATIENT_SERVICE_URL = import.meta.env.VITE_PATIENT_SERVICE_URL || 'http://localhost:5001';
-const patientApiClient: AxiosInstance = axios.create({
+// Patient service URL 
+const PATIENT_SERVICE_URL = import.meta.env.VITE_API_PATIENT_SERVICE_URL || 'http://localhost:5001';
+
+// Create axios instance for patient service
+const patientClient = axios.create({
   baseURL: PATIENT_SERVICE_URL,
   timeout: 10000,
-  withCredentials: true, // Enable cookies for JWT authentication
+  withCredentials: true, // Enable cookies for authentication
   headers: {
     'Content-Type': 'application/json',
   },
+  // Don't treat 401/404 as errors to reduce console noise
+  validateStatus: (status) => status >= 200 && status < 500,
 });
 
-// Attach Authorization header like the global apiClient
-patientApiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      config.headers = config.headers || {};
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
+patientClient.interceptors.request.use(
+  (config) => config,
   (error) => Promise.reject(error)
 );
 
-const PATIENT_API_BASE_URL = '/api/patients';
-// Patient API client for backend patient service (legacy support for develop branch)
-const PATIENT_API_BASE = 'http://localhost:5001/api';
+// Suppress errors in response interceptor
+patientClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (isAxiosError(error)) {
+      const status = error.response?.status;
+      if (status === 401 || status === 404) {
+        return Promise.reject(error);
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
-// Backend API response types
+
+// Backend response types
 interface BackendPatient {
   _id: string;
   patient_code?: string;
@@ -43,6 +43,13 @@ interface BackendPatient {
   is_active: boolean;
   is_deleted: boolean;
   last_test_type?: string;
+  emergency_contact?: {
+    name?: string;
+    phone?: string;
+  };
+  created_by?: string;
+  created_at?: string;
+  updated_at?: string;
   user?: {
     _id: string;
     fullName: string;
@@ -52,6 +59,8 @@ interface BackendPatient {
     gender?: string;
     address?: string;
     avatar?: string;
+    identityNumber?: string;
+    age?: number;
   } | null;
 }
 
@@ -62,7 +71,7 @@ interface GetAllPatientsResponse {
   totalPages: number;
 }
 
-// Frontend Patient interface for dropdown
+// Frontend types
 export interface PatientOption {
   id: string;
   fullName: string;
@@ -75,7 +84,6 @@ export interface PatientOption {
   avatar?: string;
 }
 
-// Legacy interfaces from develop branch
 export interface PatientDetailResponse {
   id: string;
   patient_code: string;
@@ -108,17 +116,15 @@ export interface PatientsResponse {
 }
 
 export interface UpdatePatientPayload {
-  id: string;
-  emergency_contact: {
+  emergency_contact?: {
     name: string;
     phone: string;
   };
   last_test_type?: string;
   is_active?: boolean;
-  avatar?: string;
 }
 
-// Transform backend response to frontend format
+
 const transformBackendPatient = (backendPatient: BackendPatient): PatientOption => {
   return {
     id: backendPatient._id,
@@ -133,240 +139,220 @@ const transformBackendPatient = (backendPatient: BackendPatient): PatientOption 
   };
 };
 
-// Patient Service API (for LabUser dropdown and other features)
-export const patientService = {
-  // Get all patients with pagination and filters
-  async getAllPatients(params?: {
+const transformToDetailResponse = (backendPatient: BackendPatient): PatientDetailResponse => {
+  return {
+    id: backendPatient._id,
+    patient_code: backendPatient.patient_code || '',
+    user: backendPatient.user ? {
+      id: backendPatient.user._id,
+      fullName: backendPatient.user.fullName,
+      email: backendPatient.user.email,
+      identityNumber: backendPatient.user.identityNumber,
+      phoneNumber: backendPatient.user.phoneNumber,
+      gender: backendPatient.user.gender,
+      age: backendPatient.user.age,
+      dateOfBirth: backendPatient.user.dateOfBirth,
+      address: backendPatient.user.address,
+    } : undefined,
+    emergency_contact: backendPatient.emergency_contact,
+    is_active: backendPatient.is_active,
+    created_by: backendPatient.created_by,
+    created_at: backendPatient.created_at,
+    updated_at: backendPatient.updated_at,
+  };
+};
+
+export class PatientService {
+  // GET /patients/getAll/
+  async getAll(params?: {
     page?: number;
     limit?: number;
     search?: string;
     isActive?: boolean;
-    populateUser?: boolean;
-  }): Promise<PatientOption[]> {
+  }): Promise<PatientsResponse> {
     try {
       const queryParams = new URLSearchParams();
       if (params?.page) queryParams.append('page', params.page.toString());
       if (params?.limit) queryParams.append('limit', params.limit.toString());
       if (params?.search) queryParams.append('search', params.search);
       if (params?.isActive !== undefined) queryParams.append('isActive', params.isActive.toString());
-      if (params?.populateUser !== undefined) queryParams.append('populateUser', params.populateUser.toString());
+      queryParams.append('populateUser', 'true');
 
       const queryString = queryParams.toString();
-      const endpoint = queryString 
-        ? `${PATIENT_API_BASE_URL}/getAll/?${queryString}`
-        : `${PATIENT_API_BASE_URL}/getAll/`;
+      const endpoint = `/api/patients/getAll/${queryString ? `?${queryString}` : ''}`;
 
-      // Try using patientApiClient first, fallback to apiService if needed
-      let responseData: GetAllPatientsResponse;
-      try {
-        const response = await patientApiClient.get<GetAllPatientsResponse>(endpoint);
-        responseData = response.data;
-      } catch {
-        // If dedicated service fails, try using main API client
-        console.warn('Patient service dedicated client failed, trying main API client');
-        responseData = await apiService.get<GetAllPatientsResponse>(endpoint);
+      const response = await patientClient.get<GetAllPatientsResponse>(endpoint);
+
+      // Check status
+      if (response.status === 401 || response.status === 404) {
+        return { patients: [], total: 0, page: 1, totalPages: 0 };
       }
 
-      // Filter out deleted patients and return active ones with user info
-      return responseData.patients
-        .filter((p: BackendPatient) => !p.is_deleted && p.is_active && p.user) // Only active patients with user info
-        .map(transformBackendPatient);
+      const data = response.data;
+      return {
+        patients: data.patients || [],
+        total: data.total,
+        page: data.page,
+        totalPages: data.totalPages,
+      };
     } catch (error) {
       console.error('Error fetching patients:', error);
-      throw new Error(apiUtils.getErrorMessage(error));
+      return { patients: [], total: 0, page: 1, totalPages: 0 };
     }
-  },
+  }
 
-  // Get all patients without pagination (for dropdowns)
-  async getAllPatientsForDropdown(): Promise<PatientOption[]> {
+  // GET /patients/viewDetail/{id} 
+  async viewDetail(id: string): Promise<PatientDetailResponse | null> {
     try {
-      // Fetch with a large limit to get all active patients
-      return await this.getAllPatients({
-        page: 1,
-        limit: 1000, // Large limit to get all patients
-        isActive: true,
-        populateUser: true,
-      });
-    } catch (error) {
-      console.error('Error fetching patients for dropdown:', error);
-      throw new Error(apiUtils.getErrorMessage(error));
-    }
-  },
+      if (!id) return null;
 
-  // Get patient by ID
-  async getPatientById(id: string): Promise<PatientOption | null> {
-    try {
-      const endpoints = [
-        `${PATIENT_API_BASE_URL}/viewDetail/${id}?populateUser=true`,
-        `/patients/viewDetail/${id}`,
-      ];
+      const endpoint = `/api/patients/viewDetail/${id}?populateUser=true`;
+      const response = await patientClient.get(endpoint);
 
-      // Try multiple endpoints and clients
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let raw: any | null = null;
-      for (const ep of endpoints) {
-        try {
-          const res = await patientApiClient.get(ep);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          raw = (res as any).data ?? res;
-          break;
-        } catch {
-          try {
-            raw = await apiService.get(ep);
-            break;
-          } catch {
-            // try next
-          }
-        }
-      }
-
-      if (!raw) return null;
-
-      // Normalize possible shapes: { patient: {...} } | direct object | { data: {...} }
-      const obj = raw as Record<string, unknown>;
-      const backendPatient = (obj.patient || obj.data || obj) as BackendPatient;
-
-      if (!backendPatient || (backendPatient as unknown as { is_deleted?: boolean }).is_deleted) {
+      // Check status
+      if (response.status === 401 || response.status === 404) {
         return null;
       }
 
-      return transformBackendPatient(backendPatient);
-    } catch (error) {
-      console.error('Error fetching patient:', error);
-      throw new Error(apiUtils.getErrorMessage(error));
-    }
-  },
-};
+      const data = response.data;
+      // Normalize response: { patient: {...} } | { data: {...} } | direct object
+      const patient = data?.patient || data?.data || data;
 
-// Legacy functions for admin pages (from develop branch)
-export async function fetchPatients(page = 1, limit = 10): Promise<PatientsResponse> {
-  try {
-    const url = `${PATIENT_API_BASE}/patients/getAll?page=${page}&limit=${limit}`;
-    const res = await axios.get(url, { timeout: 5000 });
-    // Expect backend to return { patients: [...], total, page, totalPages }
-    const body = res.data ?? {};
-    // normalize possible shapes
-    if (Array.isArray(body)) {
-      return { patients: body };
-    }
-    if (Array.isArray(body.patients)) {
-      return {
-        patients: body.patients as BackendPatient[],
-        total: body.total ?? body.totalCount,
-        page: body.page ?? page,
-        totalPages: body.totalPages ?? body.total_pages ?? undefined,
-      };
-    }
-    // Try other common shapes
-    const data = body.data ?? body.patients ?? [];
-    return {
-      patients: Array.isArray(data) ? (data as BackendPatient[]) : [],
-      total: body.total ?? undefined,
-      page: body.page ?? undefined,
-      totalPages: body.totalPages ?? undefined,
-    };
-  } catch (error) {
-    // Provide more actionable logging for common failures
-    // axios error typing is broad; attempt to extract response/status
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const e: any = error;
-    if (e?.response) {
-      console.error(`PatientService.fetchPatients error: HTTP ${e.response.status} - ${e.response.statusText}`, e.response.data ?? e.message);
-      if (e.response.status === 404) {
-        console.error(`Requested URL ${PATIENT_API_BASE}/patients/getAll returned 404. Verify the patient service is running and that the endpoint path is correct (should be ${PATIENT_API_BASE}/patients/getAll).`);
+      if (!patient || patient.is_deleted) {
+        return null;
       }
-    } else {
-      console.error('PatientService.fetchPatients error:', e?.message ?? e);
+
+      return transformToDetailResponse(patient);
+    } catch (error) {
+      console.error('Error fetching patient detail:', error);
+      return null;
     }
-    return { patients: [] };
   }
+
+  // PUT /patients/update/{id} 
+  async update(id: string, payload: UpdatePatientPayload): Promise<PatientDetailResponse | null> {
+    try {
+      if (!id) return null;
+
+      const endpoint = `/api/patients/update/${id}`;
+      const response = await patientClient.put(endpoint, payload);
+
+      // Check status
+      if (response.status === 401 || response.status === 404) {
+        return null;
+      }
+
+      const data = response.data;
+      const patient = data?.patient || data?.data || data;
+
+      if (!patient) {
+        return null;
+      }
+
+      return transformToDetailResponse(patient);
+    } catch (error) {
+      console.error('Error updating patient:', error);
+      throw new Error('Không thể cập nhật thông tin bệnh nhân');
+    }
+  }
+
+  // DELETE /patients/delete/{id} 
+  async delete(id: string): Promise<boolean> {
+    try {
+      if (!id) return false;
+
+      const endpoint = `/api/patients/delete/${id}`;
+      const response = await patientClient.delete(endpoint);
+
+      // Success if 2xx
+      return response.status >= 200 && response.status < 300;
+    } catch (error) {
+      console.error('Error deleting patient:', error);
+      return false;
+    }
+  }
+
+  // Get all patients for dropdown
+  async getAllForDropdown(): Promise<PatientOption[]> {
+    try {
+      const response = await this.getAll({
+        page: 1,
+        limit: 1000,
+        isActive: true,
+      });
+
+      return response.patients
+        .filter((p) => !p.is_deleted && p.is_active && p.user)
+        .map(transformBackendPatient);
+    } catch (error) {
+      console.error('Error fetching patients for dropdown:', error);
+      return [];
+    }
+  }
+
+  // Get patient by ID as PatientOption
+  async getById(id: string): Promise<PatientOption | null> {
+    try {
+      const detail = await this.viewDetail(id);
+      if (!detail) return null;
+
+      return {
+        id: detail.id,
+        fullName: detail.user?.fullName || 'N/A',
+        email: detail.user?.email,
+        phoneNumber: detail.user?.phoneNumber,
+        patientCode: detail.patient_code,
+        dateOfBirth: detail.user?.dateOfBirth,
+        gender: detail.user?.gender,
+        address: detail.user?.address,
+      };
+    } catch (error) {
+      console.error('Error fetching patient by ID:', error);
+      return null;
+    }
+  }
+
+  // Alias methods for backward compatibility
+  async getAllPatients(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    isActive?: boolean;
+  }): Promise<PatientOption[]> {
+    const response = await this.getAll(params);
+    return response.patients
+      .filter((p) => !p.is_deleted && p.is_active && p.user)
+      .map(transformBackendPatient);
+  }
+
+  async getAllPatientsForDropdown(): Promise<PatientOption[]> {
+    return this.getAllForDropdown();
+  }
+
+  async getPatientById(id: string): Promise<PatientOption | null> {
+    return this.getById(id);
+  }
+}
+
+// Export singleton instance
+export const patientService = new PatientService();
+
+
+export async function fetchPatients(page = 1, limit = 10): Promise<PatientsResponse> {
+  return patientService.getAll({ page, limit });
 }
 
 export async function viewPatientDetail(id: string): Promise<PatientDetailResponse | null> {
-  try {
-    const url = `${PATIENT_API_BASE}/patients/viewDetail/${id}`;
-    const res = await axios.get(url, { timeout: 5000 });
-    // Normalize possible shapes: { data: {...} } or { patient: {...} } or direct object
-    const raw = res.data;
-    let candidate = raw?.data ?? raw?.patient ?? raw?.result ?? raw;
-
-    // If candidate is an object with nested `data` (some APIs wrap twice)
-    if (candidate && (candidate.data || candidate.patient)) {
-      candidate = candidate.data ?? candidate.patient ?? candidate;
-    }
-
-    // If still nullish, log and return null
-    if (!candidate) {
-      console.warn('viewPatientDetail: empty response for id', id, 'full response:', raw);
-      return null;
-    }
-
-    return candidate as PatientDetailResponse;
-  } catch (error) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const e: any = error;
-    if (e?.response) {
-      console.error(`PatientService.viewPatientDetail error: HTTP ${e.response.status} - ${e.response.statusText}`, e.response.data ?? e.message);
-    } else {
-      console.error('PatientService.viewPatientDetail error:', e?.message ?? e);
-    }
-    return null;
-  }
+  return patientService.viewDetail(id);
 }
 
 export async function deletePatient(id: string): Promise<boolean> {
-  try {
-    // Backend delete endpoint (per spec): /patients/delete/{id}
-    const url = `${PATIENT_API_BASE}/patients/delete/${id}`;
-    // Use apiClient so cookies/auth are correctly attached
-    const res = await apiClient.delete(url, { timeout: 5000 });
-    // consider success if 2xx
-    return res.status >= 200 && res.status < 300;
-  } catch (error) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const e: any = error;
-    if (e?.response) {
-      console.error(`PatientService.deletePatient error: HTTP ${e.response.status} - ${e.response.statusText}`, e.response.data ?? e.message);
-    } else {
-      console.error('PatientService.deletePatient error:', e?.message ?? e);
-    }
-    return false;
-  }
+  return patientService.delete(id);
 }
 
 export async function updatePatient(id: string, payload: Partial<UpdatePatientPayload>): Promise<PatientDetailResponse | null> {
-  try {
-    const url = `${PATIENT_API_BASE}/patients/update/${id}`;
-    
-    // Ensure id is included in payload as required by API
-    const fullPayload: UpdatePatientPayload = {
-      id,
-      emergency_contact: {
-        name: payload.emergency_contact?.name || '',
-        phone: payload.emergency_contact?.phone || ''
-      },
-      is_active: true
-    };
-
-    console.log('Sending update request:', { url, payload: fullPayload });
-    
-    // Use apiClient which already handles auth headers
-    const res = await apiClient.put(url, fullPayload);
-
-    // normalize response
-    const body = res.data ?? res;
-    console.log('Update response:', body);
-    
-    const candidate = body?.data ?? body?.patient ?? body;
-    if (!candidate) {
-      console.warn('Update response missing data:', body);
-    }
-    return candidate ?? null;
-  } catch (error) {
-    console.error('PatientService.updatePatient error:', error);
-    // Re-throw to let component handle the error
-    throw error;
-  }
+  return patientService.update(id, payload as UpdatePatientPayload);
 }
 
-export default { fetchPatients, viewPatientDetail, deletePatient, updatePatient };
+export default patientService;
+

@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ChevronDown,
-  ChevronUp,
+  ArrowDown,
   Loader2,
   MessageCircle,
   PlusCircle,
@@ -33,7 +32,6 @@ const ChatPage: React.FC = () => {
   const [rooms, setRooms] = useState<RoomSummary[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [formCollapsed, setFormCollapsed] = useState(false);
   const [selectedLabUserId, setSelectedLabUserId] = useState('');
   const [labUsers, setLabUsers] = useState<ManagerUser[]>([]);
   const [loadingLabUsers, setLoadingLabUsers] = useState(false);
@@ -150,42 +148,36 @@ const ChatPage: React.FC = () => {
     }
   };
 
+  const handleScrollDown = () => {
+    window.scrollTo({
+      top: document.documentElement.scrollHeight,
+      behavior: 'smooth',
+    });
+  };
+
   return (
-    <div className="h-full flex flex-col gap-4">
+    <div className="w-full flex flex-col gap-4 min-h-0">
+      {/* Form tạo phòng chat - Thu gọn hơn */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-        <div className="p-6 border-b border-gray-200 flex items-center justify-between gap-3">
+        <div className="p-4 sm:p-5 border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <MessageCircle className="w-6 h-6 text-blue-600" />
+            <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 flex-shrink-0" />
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">{t('userChat.requestForm.title')}</h2>
-              <p className="text-sm text-gray-500">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">{t('userChat.requestForm.title')}</h2>
+              <p className="text-xs sm:text-sm text-gray-500">
                 {t('userChat.requestForm.description')}
               </p>
             </div>
           </div>
-          <button
-            onClick={() => setFormCollapsed((prev) => !prev)}
-            className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 transition"
-          >
-            {formCollapsed ? (
-              <>
-                <ChevronDown className="w-4 h-4" /> {t('userChat.requestForm.toggleExpand')}
-              </>
-            ) : (
-              <>
-                <ChevronUp className="w-4 h-4" /> {t('userChat.requestForm.toggleCollapse')}
-              </>
-            )}
-          </button>
         </div>
-        {!formCollapsed && (
-          <div className="p-6 space-y-5">
+        <div className="p-4 sm:p-5 space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">{t('userChat.requestForm.roomNameLabel')}</label>
               <Input
                 placeholder={t('userChat.requestForm.roomNamePlaceholder')}
                 value={roomName}
                 onChange={(e) => setRoomName(e.target.value)}
+                className="h-10"
               />
             </div>
             <div>
@@ -302,27 +294,27 @@ const ChatPage: React.FC = () => {
                 </span>
               )}
             </div>
-            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-800 space-y-2">
-                  <p className="font-semibold">{t('userChat.notes.title')}</p>
-              <ul className="list-disc list-inside space-y-1">
-                    <li>{t('userChat.notes.item1')}</li>
-                    <li>{t('userChat.notes.item2')}</li>
-                    <li>{t('userChat.notes.item3')}</li>
+            <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs sm:text-sm text-blue-800 space-y-1.5">
+              <p className="font-semibold">{t('userChat.notes.title')}</p>
+              <ul className="list-disc list-inside space-y-0.5">
+                <li>{t('userChat.notes.item1')}</li>
+                <li>{t('userChat.notes.item2')}</li>
+                <li>{t('userChat.notes.item3')}</li>
               </ul>
             </div>
-          </div>
-        )}
+        </div>
       </div>
 
-      <div className="flex-1 flex bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="w-[420px] border-r border-gray-200 flex flex-col">
-          <div className="p-4 border-b border-gray-200">
-            <div className="flex items-center gap-2.5 mb-4 justify-between">
-              <MessageCircle className="w-5 h-5 text-blue-600" />
-              <h3 className="text-lg font-semibold text-gray-900 flex-1">{t('userChat.list.title')}</h3>
+      {/* Danh sách chat rooms và nội dung */}
+      <div className="flex-1 flex bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden min-h-0">
+        <div className="w-full sm:w-[380px] lg:w-[420px] border-r border-gray-200 flex flex-col flex-shrink-0">
+          <div className="p-3 sm:p-4 border-b border-gray-200 flex-shrink-0">
+            <div className="flex items-center gap-2 sm:gap-2.5 mb-3 sm:mb-4">
+              <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0" />
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex-1">{t('userChat.list.title')}</h3>
               <button
                 type="button"
-                className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1 flex-shrink-0"
                 onClick={refreshRooms}
                 title={t('userChat.list.refreshTooltip')}
               >
@@ -380,13 +372,23 @@ const ChatPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 text-sm text-gray-500 px-8">
-          <MessageCircle className="w-14 h-14 text-gray-300 mb-4" />
+        <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 text-xs sm:text-sm text-gray-500 px-4 sm:px-8">
+          <MessageCircle className="w-12 h-12 sm:w-14 sm:h-14 text-gray-300 mb-3 sm:mb-4" />
           <p className="max-w-sm text-center">
             {t('userChat.infoPanel.description')}
           </p>
         </div>
       </div>
+
+      {/* Scroll down button */}
+      <button
+        onClick={handleScrollDown}
+        className="fixed right-6 bottom-20 z-[110] p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all hover:scale-110"
+        aria-label="Scroll down"
+        title="Cuộn xuống"
+      >
+        <ArrowDown className="w-5 h-5" />
+      </button>
     </div>
   );
 };

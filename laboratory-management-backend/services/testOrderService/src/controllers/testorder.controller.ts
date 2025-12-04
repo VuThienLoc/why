@@ -5,6 +5,8 @@ import reagentServiceClient, { Reagent } from "../services/warehouse/reagentServ
 import { TestItem } from "../db/models/TestItem.model.js";
 import { TestResultService } from "../services/testorder/testResultService.js";
 import { Types } from "mongoose";
+import iamServiceClient from "../services/iam/iamServiceClient.js";
+import patientServiceClient from "../services/patient/patientServiceClient.js";
 
 export const getAllTestOrders = async (req: Request, res: Response) => {
   try {
@@ -131,38 +133,38 @@ export const getTestOrderById = async (req: Request<{ id: string }>, res: Respon
   }
 };
 
-export const getAllOrdersGroupedByPatientId = async (req: Request, res: Response) => {
+export const getAllOrdersGroupedByUserId = async (req: Request, res: Response) => {
   try {
-    const patient_id = req.query.patient_id as string;
+    const user_id = req.query.user_id as string;
+  
+    // Lấy patient dựa vào user_id
+    const patient = await patientServiceClient.getPatientByUserId(user_id);
+    if (!patient) {
+      return res.status(404).json({ success: false, message: "Patient not found" });
+    }
+
     const created_atByString = req.query.created_at as string;
-    const created_at = new Date(created_atByString);
+    const created_at = created_atByString ? new Date(created_atByString) : undefined;
 
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
-
-    const GroupOfOnePatientData = await TestOrderService.getOrdersGroupedByOnePatient(
-      patient_id,
-      created_at,
-      page,
-      limit
+    // Lấy tất cả orders của patient (không phân trang)
+    const groupOfOnePatientData = await TestOrderService.getOrdersGroupedByOnePatient(
+      user_id,
+      patient._id,
+      created_at 
     );
-    if (!GroupOfOnePatientData.length) {
+
+    if (!groupOfOnePatientData.length) {
       return res.json({ success: true, data: null });
     }
-    const { patient_name, orders, totalOrders } = GroupOfOnePatientData[0];
-    const totalPages = Math.ceil(totalOrders / limit);
-    
+
+    const { patient_name, orders } = groupOfOnePatientData[0];
+
     return res.json({
       success: true,
       data: {
-        patient_id,
+        user_id,
         patient_name,
-        orders,
-        pagination: {
-          page,
-          limit,
-          totalPages
-        }
+        orders
       }
     });
   } catch (error) {
@@ -172,6 +174,7 @@ export const getAllOrdersGroupedByPatientId = async (req: Request, res: Response
     });
   }
 };
+
 
 
 

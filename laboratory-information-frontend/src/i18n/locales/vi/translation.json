@@ -1,4 +1,23 @@
 {
+  "dashboard": {
+    "welcomeBack": "Chào mừng trở lại",
+    "welcomeBackUser": "Chào mừng trở lại, {{name}}",
+    "overview": "Đây là tổng quan về hoạt động gần đây của bạn",
+    "totalTests": "Tổng số xét nghiệm",
+    "all": "Tất cả",
+    "pendingTests": "Xét nghiệm đang chờ",
+    "pending": "Đang chờ",
+    "processingTests": "Xét nghiệm đang xử lý",
+    "processing": "Đang xử lý",
+    "completedTests": "Xét nghiệm hoàn thành",
+    "completedSuccess": "Hoàn thành thành công",
+    "recentResults": "Kết quả xét nghiệm gần đây",
+    "recentResultsDesc": "Kết quả xét nghiệm mới nhất của bạn",
+    "orderDate": "Ngày đặt",
+    "completionDate": "Ngày hoàn thành",
+    "noResults": "Chưa có kết quả xét nghiệm nào.",
+    "loading": "Đang tải..."
+  },
   "header": {
     "appName": "LIMS Pro",
     "appDescription": "Hệ thống Quản lý Thông tin Phòng thí nghiệm",
@@ -242,7 +261,7 @@
     "emailPlaceholder": "Email của bạn"
   },
   "admin": {
-    "role": "Vai trò"
+    "role": "Quản trị viên"
   },
   "manager": {
     "managerRole": "Quản lý",
@@ -251,6 +270,8 @@
     "instruments": "Thiết bị",
     "userManagementDescription": "Quản lý tài khoản người dùng trong hệ thống",
     "createUser": "Tạo người dùng",
+    "viewUser": "Thông tin người dùng",
+    "editUser": "Chỉnh sửa người dùng",
     "totalUsers": "Tổng người dùng",
     "activeUsers": "Người dùng hoạt động",
     "lockedUsers": "Người dùng bị khóa",
@@ -262,7 +283,7 @@
     "admin": "Quản trị viên",
     "manager": "Quản lý",
     "labUser": "Người dùng phòng lab",
-    "service": "Dịch vụ",
+    "service": "Quản lý dịch vụ",
     "user": "Người dùng",
     "status": "Trạng thái",
     "allStatus": "Tất cả trạng thái",
@@ -306,11 +327,11 @@
     "dashboard": "Tổng quan",
     "userManagement": "Quản lý người dùng",
     "patientManagement": "Quản lý bệnh nhân",
-    "testOrders": "Quản lý đơn xét nghiệm",
+    "testOrders": "Đơn xét nghiệm",
     "auditReports": "Nhật ký sự kiện",
     "testResults": "Kết quả xét nghiệm",
-    "instruments": "Quản lý thiết bị",
-    "reagents": "Quản lý hóa chất",
+    "instruments": "Thiết bị",
+    "reagents": "Hóa chất",
     "profile": "Hồ sơ cá nhân",
     "role": "Quản trị viên",
     "eventLogs": "Nhật ký sự kiện",
@@ -531,6 +552,40 @@
       "saving": "Đang lưu...",
       "success": "Cập nhật hồ sơ thành công",
       "error": "Cập nhật hồ sơ thất bại"
+    },
+    "updateModal": {
+      "titleCreate": "Thêm bệnh nhân mới",
+      "titleEdit": "Chỉnh sửa bệnh nhân",
+      "titleView": "Chi tiết bệnh nhân",
+      "fullName": "Họ và tên",
+      "patientCode": "Mã bệnh nhân",
+      "email": "Email",
+      "identityNumber": "CMND/CCCD",
+      "phoneNumber": "Số điện thoại",
+      "phoneNumberRequired": "Số điện thoại",
+      "gender": "Giới tính",
+      "selectGender": "Chọn",
+      "male": "Nam",
+      "female": "Nữ",
+      "other": "Khác",
+      "age": "Tuổi",
+      "dateOfBirth": "Ngày sinh",
+      "address": "Địa chỉ",
+      "emergencyContactInfo": "Thông tin liên hệ khẩn cấp",
+      "emergencyContactName": "Tên liên hệ",
+      "emergencyContactNameRequired": "Tên liên hệ",
+      "emergencyContactPhone": "Số điện thoại",
+      "close": "Đóng",
+      "cancel": "Hủy",
+      "create": "Thêm bệnh nhân",
+      "update": "Cập nhật",
+      "validation": {
+        "emergencyNameRequired": "Tên người liên hệ là bắt buộc",
+        "emergencyNameNoNumbers": "Tên người liên hệ không được chứa số",
+        "emergencyPhoneRequired": "Số điện thoại là bắt buộc",
+        "emergencyPhoneNoLetters": "Số điện thoại không được chứa chữ cái",
+        "emergencyPhoneInvalid": "Số điện thoại chứa ký tự không hợp lệ"
+      }
     }
   },
   "testOrder": {
@@ -552,6 +607,7 @@
     "processing": "Đang xử lý",
     "completed": "Đã hoàn thành",
     "status": "Trạng thái",
+    "statusChanged": "Đã chuyển sang {{status}}",
     "biochemistry": "Sinh hóa máu",
     "generalHematology": "Huyết học tổng quát",
     "microbiology": "Vi sinh",
@@ -773,6 +829,10 @@
   "testResult": {
     "title": "Kết quả Xét nghiệm",
     "subtitle": "Nhập và quản lý kết quả xét nghiệm đã hoàn thành",
+    "aiReviewFailed": "Không thể tạo nhận xét từ AI",
+    "aiReviewSuccess": "AI đã tạo nhận xét thành công",
+    "aiReviewing": "Đang xử lý...",
+    "aiReview": "AI Review",
     "resultsCount": "{{current}} / {{total}} kết quả xét nghiệm",
     "foundResults": "(tìm thấy {{found}} / {{total}})",
     "search": "Tìm kiếm",
@@ -981,9 +1041,9 @@
     "updateProfileError": "Cập nhật thất bại. Vui lòng thử lại.",
     "notUpdated": "Chưa cập nhật",
     "loadProfileError": "Không thể tải thông tin hồ sơ.",
-    "editProfile": "Chỉnh sửa hồ sơ",
+    "edit": "Chỉnh sửa hồ sơ",
     "cancel": "Hủy",
-    "saveChanges": "Lưu thay đổi",
+    "save": "Lưu thay đổi",
     "statusAndContact": "Trạng thái & Liên hệ",
     "status": "Trạng thái",
     "active": "Đang hoạt động",
@@ -1006,7 +1066,6 @@
     "title": "Nhật ký sự kiện",
     "subtitle": "Báo cáo hoạt động và nhật ký kiểm toán hệ thống",
     "exportReport": "Xuất báo cáo",
-    "advancedFilter": "Bộ lọc nâng cao",
     "loading": "Đang tải dữ liệu...",
     "error": "Không thể tải nhật ký sự kiện",
     "searchPlaceholder": "Tìm theo tên hoặc email người dùng",
@@ -1026,6 +1085,8 @@
     "time": "Thời gian",
     "newest": "Mới nhất",
     "oldest": "Cũ nhất",
+    "startDate": "Ngày bắt đầu",
+    "endDate": "Ngày kết thúc",
     "clearFilter": "Xóa bộ lọc",
     "table": {
       "user": "Người dùng",
@@ -1099,6 +1160,9 @@
       "gender": "Giới tính",
       "dob": "Ngày sinh",
       "identityNumber": "CCCD",
+      "isActive":"Trạng thái hoạt động",
+      "active":"Hoạt động",
+      "inactive":"Không hoạt động",
       "role": "Vai trò",
       "male": "Nam",
       "female": "Nữ"
@@ -1108,6 +1172,8 @@
       "createdMedical": "Thông tin hồ sơ bệnh nhân được tạo",
       "deletedPatient": "Thông tin bệnh nhân bị xóa",
       "deletedMedical": "Thông tin hồ sơ bệnh nhân bị xóa",
+      "patientInfo": "Thông tin bệnh nhân",
+      "recordInfo": "Thông tin hồ sơ bệnh nhân",
       "patientCode": "Mã bệnh nhân",
       "patientName": "Tên bệnh nhân",
       "age": "Tuổi",
@@ -1125,6 +1191,9 @@
     "testOrder": {
       "createdOrder": "Thông tin lệnh xét nghiệm đã tạo",
       "deletedOrder": "Thông tin lệnh xét nghiệm bị xóa",
+      "patientInfo": "Thông tin bệnh nhân",
+      "orderInfo": "Thông tin lệnh xét nghiệm",
+      "statusUpdateInfo": "Cập nhật trạng thái lệnh xét nghiệm",
       "patientName": "Tên bệnh nhân",
       "testType": "Loại xét nghiệm",
       "instrumentName": "Tên thiết bị",
@@ -1143,7 +1212,11 @@
       "instrumentType": "Loại thiết bị",
       "manufacturer": "Nhà sản xuất",
       "location": "Vị trí",
-      "status": "Trạng thái"
+      "status": "Trạng thái",
+      "reagentInfo": "Thông tin thuốc thử",
+      "instrumentInfo": "Thông tin thiết bị",
+      "reagentCode": "Mã thuốc thử",
+      "reagentName": "Tên thuốc thử"
     }
   }
 }

@@ -13,7 +13,7 @@ import { Patient_DeleteModal } from './PatientDeleteModal';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/common/skeleton';
 import { useAuthContext } from '../../../../hooks/useAuthContext';
-import AddPatientMedicalRecord from '../../../labuser/components/modals/PatientMedicalRecordModal/PatientMedicalRecordAddModal';
+import AddPatientMedicalRecord from '@/pages/labuser/components/modals/PatientMedicalRecordModal/PatientMedicalRecordAddModal';
 import { useTranslation } from 'react-i18next';
 
 export function AdminPatientManagementPage() {
@@ -575,7 +575,7 @@ export function AdminPatientManagementPage() {
           <AddPatientMedicalRecord
             open={mrCreateOpen}
             onOpenChange={setMrCreateOpen}
-            onCreated={(created) => {
+            onCreated={(created: PatientMedicalRecord | null | undefined) => {
               if (!created) return;
               setPatients(prev => prev.map(p => p.id === created.patient_id
                 ? { ...p, bloodType: created.blood_type || p.bloodType }

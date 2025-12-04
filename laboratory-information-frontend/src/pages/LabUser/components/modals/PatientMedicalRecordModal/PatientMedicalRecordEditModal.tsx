@@ -31,6 +31,7 @@ export default function EditPatientMedicalRecord({ id, open, onOpenChange, onUpd
     clinical_notes: '',
     recent_test_summary: '',
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     let mounted = true;
@@ -72,8 +73,23 @@ export default function EditPatientMedicalRecord({ id, open, onOpenChange, onUpd
     return () => { mounted = false; };
   }, [open, id]);
 
+  const validate = () => {
+    const newErrors: Record<string, string> = {};
+    if (!form.blood_type) newErrors.blood_type = `${t('patient.bloodType')} là bắt buộc`;
+    if (!form.allergies) newErrors.allergies = `${t('patient.allergies')} là bắt buộc`;
+    if (!form.chronic_conditions) newErrors.chronic_conditions = `${t('patient.chronicConditions')} là bắt buộc`;
+    if (!form.current_medications) newErrors.current_medications = `${t('patient.currentMedications')} là bắt buộc`;
+    if (!form.medical_history) newErrors.medical_history = `${t('patient.medicalHistory')} là bắt buộc`;
+    if (!form.clinical_notes) newErrors.clinical_notes = `${t('patient.clinicalNotes')} là bắt buộc`;
+    if (!form.recent_test_summary) newErrors.recent_test_summary = `${t('patient.recentTestSummary')} là bắt buộc`;
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async () => {
     if (!id) return;
+    if (!validate()) return;
     setLoading(true);
     try {
       const updated = await patientMedicalRecordService.update(id, form);
@@ -122,7 +138,9 @@ export default function EditPatientMedicalRecord({ id, open, onOpenChange, onUpd
 
             {/* Blood Type */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">{t('patient.medicalRecordEdit.bloodType')}</Label>
+              <Label className="text-sm font-medium text-gray-700">
+                {t('patient.medicalRecordEdit.bloodType')} <span className="text-red-500">*</span>
+              </Label>
               <div className="relative group">
                 <Droplet className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                 <Input
@@ -132,11 +150,14 @@ export default function EditPatientMedicalRecord({ id, open, onOpenChange, onUpd
                   className="pl-10 h-11 border-gray-200 focus-visible:border-blue-500 focus-visible:ring-blue-200 transition-all"
                 />
               </div>
+              {errors.blood_type && <p className="text-red-500 text-sm mt-1">{errors.blood_type}</p>}
             </div>
 
             {/* Allergies */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">{t('patient.medicalRecordEdit.allergies')}</Label>
+              <Label className="text-sm font-medium text-gray-700">
+                {t('patient.medicalRecordEdit.allergies')} <span className="text-red-500">*</span>
+              </Label>
               <div className="relative group">
                 <AlertTriangle className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                 <Input 
@@ -145,11 +166,14 @@ export default function EditPatientMedicalRecord({ id, open, onOpenChange, onUpd
                   className="pl-10 h-11 border-gray-200 focus-visible:border-blue-500 focus-visible:ring-blue-200 transition-all"
                 />
               </div>
+              {errors.allergies && <p className="text-red-500 text-sm mt-1">{errors.allergies}</p>}
             </div>
 
             {/* Chronic Conditions */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">{t('patient.medicalRecordEdit.chronicConditions')}</Label>
+              <Label className="text-sm font-medium text-gray-700">
+                {t('patient.medicalRecordEdit.chronicConditions')} <span className="text-red-500">*</span>
+              </Label>
               <div className="relative group">
                 <Activity className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                 <Input 
@@ -158,11 +182,14 @@ export default function EditPatientMedicalRecord({ id, open, onOpenChange, onUpd
                   className="pl-10 h-11 border-gray-200 focus-visible:border-blue-500 focus-visible:ring-blue-200 transition-all"
                 />
               </div>
+              {errors.chronic_conditions && <p className="text-red-500 text-sm mt-1">{errors.chronic_conditions}</p>}
             </div>
 
             {/* Current Medications */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">{t('patient.medicalRecordEdit.currentMedications')}</Label>
+              <Label className="text-sm font-medium text-gray-700">
+                {t('patient.medicalRecordEdit.currentMedications')} <span className="text-red-500">*</span>
+              </Label>
               <div className="relative group">
                 <Pill className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                 <Input 
@@ -171,11 +198,14 @@ export default function EditPatientMedicalRecord({ id, open, onOpenChange, onUpd
                   className="pl-10 h-11 border-gray-200 focus-visible:border-blue-500 focus-visible:ring-blue-200 transition-all"
                 />
               </div>
+              {errors.current_medications && <p className="text-red-500 text-sm mt-1">{errors.current_medications}</p>}
             </div>
 
             {/* Medical History */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">{t('patient.medicalRecordEdit.medicalHistory')}</Label>
+              <Label className="text-sm font-medium text-gray-700">
+                {t('patient.medicalRecordEdit.medicalHistory')} <span className="text-red-500">*</span>
+              </Label>
               <div className="relative group">
                 <History className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                 <Input
@@ -184,11 +214,14 @@ export default function EditPatientMedicalRecord({ id, open, onOpenChange, onUpd
                   className="pl-10 h-11 border-gray-200 focus-visible:border-blue-500 focus-visible:ring-blue-200 transition-all"
                 />
               </div>
+              {errors.medical_history && <p className="text-red-500 text-sm mt-1">{errors.medical_history}</p>}
             </div>
 
             {/* Clinical Notes */}
             <div className="md:col-span-2 space-y-2">
-              <Label className="text-sm font-medium text-gray-700">{t('patient.medicalRecordEdit.clinicalNotes')}</Label>
+              <Label className="text-sm font-medium text-gray-700">
+                {t('patient.medicalRecordEdit.clinicalNotes')} <span className="text-red-500">*</span>
+              </Label>
               <div className="relative group">
                 <ClipboardList className="absolute left-3 top-3 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                 <Textarea 
@@ -197,11 +230,14 @@ export default function EditPatientMedicalRecord({ id, open, onOpenChange, onUpd
                   className="pl-10 min-h-[100px] border-gray-200 focus-visible:border-blue-500 focus-visible:ring-blue-200 transition-all"
                 />
               </div>
+              {errors.clinical_notes && <p className="text-red-500 text-sm mt-1">{errors.clinical_notes}</p>}
             </div>
 
             {/* Recent Test Summary */}
             <div className="md:col-span-2 space-y-2">
-              <Label className="text-sm font-medium text-gray-700">{t('patient.medicalRecordEdit.recentTestSummary')}</Label>
+              <Label className="text-sm font-medium text-gray-700">
+                {t('patient.medicalRecordEdit.recentTestSummary')} <span className="text-red-500">*</span>
+              </Label>
               <div className="relative group">
                 <FileText className="absolute left-3 top-3 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                 <Textarea 
@@ -210,6 +246,7 @@ export default function EditPatientMedicalRecord({ id, open, onOpenChange, onUpd
                   className="pl-10 min-h-[100px] border-gray-200 focus-visible:border-blue-500 focus-visible:ring-blue-200 transition-all"
                 />
               </div>
+              {errors.recent_test_summary && <p className="text-red-500 text-sm mt-1">{errors.recent_test_summary}</p>}
             </div>
           </div>
         </div>

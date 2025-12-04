@@ -3,201 +3,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/commo
 import Button from '../../components/common/button';
 import { Input } from '../../components/common/input';
 import { Label } from '../../components/common/label';
-import { Textarea } from '../../components/common/textarea';
 import Pagination from '../../components/common/pagination';
 import { toast } from 'sonner';
 import {
   Search,
   FlaskConical,
-  X,
-  Activity,
   ChevronDown,
-  Edit,
   Trash2
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { TestResult, TestResultDetail } from './types/TestResultTypes';
 import { testResultService } from '../../service/testResultService';
 import { Skeleton } from '@/components/common/skeleton';
+import TestResultDetailModal from './components/modals/TestResultModal/TestResultDetailModal';
+import TestResultEditModal from './components/modals/TestResultModal/TestResultEditModal';
 
-// View Detail Modal Component
-const ViewDetailModal: React.FC<{
-  result: TestResultDetail | null;
-  patientName: string;
-  isOpen: boolean;
-  onClose: () => void;
-  onUpdateSuccess: () => void;
-}> = ({ result, patientName, isOpen, onClose, onUpdateSuccess }) => {
-  const { t } = useTranslation();
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [resultValue, setResultValue] = useState<number>(0);
-  const [reviewerComment, setReviewerComment] = useState('');
-  const [updating, setUpdating] = useState(false);
-
-  // Initialize form values when result changes
-  useEffect(() => {
-    if (result) {
-      setResultValue(result.resultValue);
-      setReviewerComment(result.reviewerComment || '');
-    }
-  }, [result]);
-
-  if (!isOpen || !result) return null;
-
-  const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString('vi-VN', {
-      hour: '2-digit',
-      minute: '2-digit',
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  };
-
-  const handleUpdate = async () => {
-    try {
-      setUpdating(true);
-      await testResultService.updateTestResult(result.id, {
-        result_value: resultValue,
-        reviewer_comment: reviewerComment,
-      });
-      toast.success(t('testResult.updateSuccess'));
-      setIsEditMode(false);
-      onUpdateSuccess();
-      onClose();
-    } catch {
-      toast.error(t('testResult.updateFailed'));
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  const handleCancel = () => {
-    // Reset to original values
-    setResultValue(result.resultValue);
-    setReviewerComment(result.reviewerComment || '');
-    setIsEditMode(false);
-  };
-
-  return (
-    <div className="fixed inset-0 backdrop-blur-md flex items-center justify-center z-50 p-2 sm:p-4 animate-in fade-in duration-300">
-      <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-4 duration-300 border border-gray-200">
-        <div className="p-4 sm:p-6">
-          <div className="flex justify-between items-center mb-4 sm:mb-6">
-            <h2 className="text-lg sm:text-xl font-semibold">
-              {isEditMode ? t('testResult.modal.editTitle') : t('testResult.modal.detailTitle')}
-            </h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-              <X className="w-5 h-5 sm:w-6 sm:h-6" />
-            </button>
-          </div>
-
-          <div className="space-y-4">
-            <div className="p-3 sm:p-4 bg-gray-50 rounded-lg">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <div>
-                  <p className="text-sm text-gray-600">{t('testResult.modal.patient')}</p>
-                  <p className="font-medium">{patientName}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">{t('testResult.modal.testType')}</p>
-                  <p className="font-medium">{result.test_type}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">{t('testResult.modal.testItem')}</p>
-                  <p className="font-medium">{result.name} ({result.code})</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">{t('testResult.modal.result')}</p>
-                  {isEditMode ? (
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={resultValue}
-                        onChange={(e) => setResultValue(parseFloat(e.target.value))}
-                        className="w-full sm:w-32"
-                      />
-                      <span className="font-medium text-gray-700">{result.unit}</span>
-                    </div>
-                  ) : (
-                    <p className="font-medium">{result.resultValue} {result.unit}</p>
-                  )}
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">{t('testResult.modal.status')}</p>
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${result.resultStatus === 'normal' ? 'bg-green-100 text-green-800' :
-                    result.resultStatus === 'abnormal' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
-                    {result.resultStatus === 'normal' ? t('testResult.status.normal') :
-                      result.resultStatus === 'abnormal' ? t('testResult.status.abnormal') : t('testResult.status.critical')}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">{t('testResult.modal.createdAt')}</p>
-                  <p className="font-medium">{formatDateTime(result.createdAt)}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-3 sm:p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-gray-600 mb-2">{t('testResult.modal.reviewerComment')}</p>
-              {isEditMode ? (
-                <Textarea
-                  value={reviewerComment}
-                  onChange={(e) => setReviewerComment(e.target.value)}
-                  placeholder={t('testResult.modal.commentPlaceholder')}
-                  rows={4}
-                  className="w-full"
-                />
-              ) : (
-                <>
-                  {result.reviewerComment ? (
-                    <p className="text-gray-800">{result.reviewerComment}</p>
-                  ) : (
-                    <p className="text-gray-400 italic">{t('testResult.modal.noComment')}</p>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row justify-end mt-4 sm:mt-6 gap-2 sm:gap-3">
-            {isEditMode ? (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={handleCancel}
-                  disabled={updating}
-                  className="w-full sm:w-auto"
-                >
-                  {t('testResult.cancel')}
-                </Button>
-                <Button
-                  onClick={handleUpdate}
-                  disabled={updating}
-                  className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
-                >
-                  {updating ? t('testResult.updating') : t('testResult.update')}
-                </Button>
-              </>
-            ) : (
-              <Button
-                onClick={() => setIsEditMode(true)}
-                className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
-              >
-                <Edit className="w-4 h-4 mr-2" />
-                {t('testResult.update')}
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // Main Component
 const TestResultsPage: React.FC = () => {
@@ -211,6 +31,7 @@ const TestResultsPage: React.FC = () => {
     patientName: string;
   } | null>(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -270,6 +91,38 @@ const TestResultsPage: React.FC = () => {
   const handleViewDetail = (result: TestResultDetail, patientName: string) => {
     setSelectedResult({ result, patientName });
     setViewModalOpen(true);
+  };
+
+  // Function to refresh data and update selected result after AI review
+  const handleRefreshAndUpdateResult = async (resultId: string, newComment: string) => {
+    try {
+      // Reload all test results and wait for it to complete
+      setLoading(true);
+      const refreshedData = await testResultService.getAllTestResults();
+      setAllResults(refreshedData);
+      setLoading(false);
+      
+      // Find the updated result from refreshed data
+      const updatedResult = refreshedData
+        .flatMap(r => r.results)
+        .find(r => r.id === resultId);
+      
+      if (updatedResult && selectedResult) {
+        // Update selectedResult with the new data including the new comment
+        setSelectedResult({
+          result: {
+            ...updatedResult,
+            reviewerComment: newComment, // Use the new comment from AI
+          },
+          patientName: selectedResult.patientName,
+        });
+      }
+    } catch (error) {
+      console.error('Error refreshing and updating result:', error);
+      setLoading(false);
+      // Fallback: just reload data
+      await loadTestResults();
+    }
   };
 
   const toggleRow = (testOrderId: string) => {
@@ -389,12 +242,7 @@ const TestResultsPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex sm:items-end">
-              <Button variant="outline" onClick={loadTestResults} className="flex items-center w-full sm:w-auto justify-center">
-                <Activity className="w-4 h-4 mr-2" />
-                {t('testResult.refresh')}
-              </Button>
-            </div>
+            
           </div>
         </CardContent>
       </Card>
@@ -537,13 +385,31 @@ const TestResultsPage: React.FC = () => {
 
       {/* Modals */}
       {selectedResult && (
-        <ViewDetailModal
+        <>
+          <TestResultDetailModal
           result={selectedResult.result}
           patientName={selectedResult.patientName}
           isOpen={viewModalOpen}
           onClose={() => setViewModalOpen(false)}
           onUpdateSuccess={loadTestResults}
-        />
+            onRefreshAndUpdateResult={handleRefreshAndUpdateResult}
+            onEdit={() => {
+              setViewModalOpen(false);
+              setEditModalOpen(true);
+            }}
+          />
+          <TestResultEditModal
+            result={selectedResult.result}
+            patientName={selectedResult.patientName}
+            isOpen={editModalOpen}
+            onClose={() => {
+              setEditModalOpen(false);
+              // Refresh data after edit
+              loadTestResults();
+            }}
+            onUpdateSuccess={loadTestResults}
+          />
+        </>
       )}
 
       {/* Delete Confirmation Dialog */}

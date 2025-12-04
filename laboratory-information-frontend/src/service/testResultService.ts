@@ -1,7 +1,7 @@
 import axios from 'axios';
-import type { TestResultApiResponse, TestResultGroup, TestResult, TestResultDetail } from '../pages/LabUser/types/TestResultTypes';
+import type { TestResultApiResponse, TestResultGroup, TestResult, TestResultDetail, TestResultItem } from '../pages/labuser/types/TestResultTypes';
 
-const TEST_RESULT_API_BASE = 'http://localhost:5002/api';
+const TEST_RESULT_API_BASE = import.meta.env.VITE_API_TEST_ORDER_SERVICE_URL || 'http://localhost:5002';
 
 // Interface for the flat response item from getResultsByUserId/PatientId
 export interface TestResultFlatItem {
@@ -38,7 +38,7 @@ const testResultClient = axios.create({
 
 // Transform API response to UI format
 const transformTestResultGroup = (group: TestResultGroup): TestResult => {
-  const results: TestResultDetail[] = group.resultsSample.map(item => {
+  const results: TestResultDetail[] = group.resultsSample.map((item: TestResultItem) => {
     return {
       id: item._id,
       testItemId: item.test_item_id,
@@ -116,14 +116,14 @@ export class TestResultService {
   async getAllTestResults(): Promise<TestResult[]> {
     try {
       // Tải tất cả dữ liệu và phân trang ở frontend
-      const response = await testResultClient.get<TestResultApiResponse>('/testResult/all', {
+      const response = await testResultClient.get<TestResultApiResponse>(`${TEST_RESULT_API_BASE}/api/testResult/all`, {
         params: { page: 1, limit: 1000 }
       });
 
       const results = response.data.data.map(transformTestResultGroup);
       
       // Sắp xếp theo createdAt từ mới nhất đến cũ nhất
-      return results.sort((a, b) => {
+      return results.sort((a: TestResult, b: TestResult) => {
         const dateA = new Date(a.createdAt).getTime();
         const dateB = new Date(b.createdAt).getTime();
         return dateB - dateA; // Mới nhất trước
@@ -139,7 +139,7 @@ export class TestResultService {
     updateData: { result_value?: number; reviewer_comment?: string; reviewed?: boolean }
   ): Promise<void> {
     try {
-      await testResultClient.put(`/testResult/update/${id}`, updateData);
+      await testResultClient.put(`${TEST_RESULT_API_BASE}/api/testResult/update/${id}`, updateData);
     } catch (error) {
       console.error('Error updating test result:', error);
       throw new Error('Không thể cập nhật kết quả xét nghiệm');
@@ -148,7 +148,7 @@ export class TestResultService {
 
   async reviewTestResult(id: string, comment: string): Promise<void> {
     try {
-      await testResultClient.put(`/testResult/update/${id}`, {
+      await testResultClient.put(`${TEST_RESULT_API_BASE}/api/testResult/update/${id}`, {
         reviewed: true,
         reviewer_comment: comment,
       });
@@ -160,7 +160,7 @@ export class TestResultService {
 
   async deleteTestResult(test_order_id: string): Promise<void> {
     try {
-      await testResultClient.delete(`/testResult/delete/${test_order_id}`);
+      await testResultClient.delete(`${TEST_RESULT_API_BASE}/api/testResult/delete/${test_order_id}`);
     } catch (error) {
       console.error('Error deleting test result:', error);
       throw new Error('Không thể xóa kết quả xét nghiệm');
@@ -177,6 +177,8 @@ export class TestResultService {
     };
   }> {
     try {
+      // Fetch all results to handle grouping and pagination on client side
+      // This is a workaround because backend paginates by items, not by orders
       const response = await testResultClient.get<{
         data: TestResultFlatItem[];
         pagination: {
@@ -185,13 +187,30 @@ export class TestResultService {
           total: number;
           totalPages: number;
         };
-      }>(`/testResult/getResultsByUserId/${userId}`, {
-        params: { page, limit }
+      }>(`${TEST_RESULT_API_BASE}/api/testResult/getResultsByUserId/${userId}`, {
+        params: { page: 1, limit: 1000 }
       });
 
+      const allGroupedResults = groupTestResults(response.data.data);
+      
+      // Sort by createdAt descending
+      allGroupedResults.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      const totalGroups = allGroupedResults.length;
+      const totalPages = Math.ceil(totalGroups / limit);
+      
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      const paginatedResults = allGroupedResults.slice(startIndex, endIndex);
+
       return {
-        data: groupTestResults(response.data.data),
-        pagination: response.data.pagination
+        data: paginatedResults,
+        pagination: {
+          page,
+          limit,
+          total: totalGroups,
+          totalPages
+        }
       };
     } catch (error) {
       console.error('Error fetching test results by user ID:', error);
@@ -210,7 +229,7 @@ export class TestResultService {
     };
   }> {
     try {
-      const response = await testResultClient.get(`/testResult/getResultsByPatientId/${patientId}`);
+      const response = await testResultClient.get(`${TEST_RESULT_API_BASE}/api/testResult/getResultsByPatientId/${patientId}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching test results by patient ID:', error);

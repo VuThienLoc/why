@@ -18,11 +18,23 @@ interface BackendUser {
   dateOfBirth?: string;
 }
 
+interface LoginResponse {
+  message: string;
+  accessToken?: string; // Token from backend response
+  user: BackendUser;
+}
+
 export async function authenticateUser(identifier: string, password: string): Promise<User | null> {
   try {
-    const response = await apiService.post<{ user: BackendUser }>("/login", { identifier, password });
+    const response = await apiService.post<LoginResponse>("/login", { identifier, password });
     if (response?.user) {
       const backendUser = response.user;
+
+      // Save accessToken to localStorage if provided by backend
+      if (response.accessToken) {
+        localStorage.setItem('authToken', response.accessToken);
+        console.log('[Login] Token saved to localStorage');
+      }
 
       const user: User = {
         id: backendUser.id,

@@ -36,6 +36,7 @@ export default function AddPatientMedicalRecord({ open, onOpenChange, onCreated,
     const [showPatientSuggestions, setShowPatientSuggestions] = useState(false);
     const [highlightedPatientIndex, setHighlightedPatientIndex] = useState(-1);
     const [selectedPatient, setSelectedPatient] = useState<PatientOption | null>(null);
+    const [errors, setErrors] = useState<Record<string, string>>({});
     const patientSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
     const patientSearchContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -165,11 +166,23 @@ export default function AddPatientMedicalRecord({ open, onOpenChange, onCreated,
         }
     };
 
+    const validate = () => {
+        const newErrors: Record<string, string> = {};
+        if (!form.patient_id) newErrors.patient_id = t('patient.pleaseSelectPatient');
+        if (!form.blood_type) newErrors.blood_type = `${t('patient.bloodType')} là bắt buộc`;
+        if (!form.allergies) newErrors.allergies = `${t('patient.allergies')} là bắt buộc`;
+        if (!form.chronic_conditions) newErrors.chronic_conditions = `${t('patient.chronicConditions')} là bắt buộc`;
+        if (!form.current_medications) newErrors.current_medications = `${t('patient.currentMedications')} là bắt buộc`;
+        if (!form.medical_history) newErrors.medical_history = `${t('patient.medicalHistory')} là bắt buộc`;
+        if (!form.clinical_notes) newErrors.clinical_notes = `${t('patient.clinicalNotes')} là bắt buộc`;
+        if (!form.recent_test_summary) newErrors.recent_test_summary = `${t('patient.recentTestSummary')} là bắt buộc`;
+        
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     const handleSubmit = async () => {
-        if (!form.patient_id) {
-            toast.error(t('patient.pleaseSelectPatient'));
-            return;
-        }
+        if (!validate()) return;
         setCreating(true);
         try {
             const created = await patientMedicalRecordService.create(form);
@@ -285,6 +298,7 @@ export default function AddPatientMedicalRecord({ open, onOpenChange, onCreated,
                                     </div>
                                 )}
                             </div>
+                            {errors.patient_id && <p className="text-red-500 text-sm mt-1">{errors.patient_id}</p>}
                             {selectedPatient?.patientCode && (
                                 <p className="text-xs text-muted-foreground ml-1">{t('patient.patientCode')}: {selectedPatient.patientCode}</p>
                             )}
@@ -292,7 +306,9 @@ export default function AddPatientMedicalRecord({ open, onOpenChange, onCreated,
 
                         {/* Blood Type */}
                         <div className="space-y-2">
-                            <Label className="text-sm font-medium text-gray-700">{t('patient.bloodType')}</Label>
+                            <Label className="text-sm font-medium text-gray-700">
+                                {t('patient.bloodType')} <span className="text-red-500">*</span>
+                            </Label>
                             <div className="relative group">
                                 <Droplet className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                                 <Input
@@ -302,11 +318,14 @@ export default function AddPatientMedicalRecord({ open, onOpenChange, onCreated,
                                     className="pl-10 h-11 transition-all border-gray-200 focus-visible:border-blue-500 focus-visible:ring-blue-200"
                                 />
                             </div>
+                            {errors.blood_type && <p className="text-red-500 text-sm mt-1">{errors.blood_type}</p>}
                         </div>
 
                         {/* Allergies */}
                         <div className="space-y-2">
-                            <Label className="text-sm font-medium text-gray-700">{t('patient.allergies')}</Label>
+                            <Label className="text-sm font-medium text-gray-700">
+                                {t('patient.allergies')} <span className="text-red-500">*</span>
+                            </Label>
                             <div className="relative group">
                                 <AlertCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                                 <Input 
@@ -315,11 +334,14 @@ export default function AddPatientMedicalRecord({ open, onOpenChange, onCreated,
                                     className="pl-10 h-11 transition-all border-gray-200 focus-visible:border-blue-500 focus-visible:ring-blue-200"
                                 />
                             </div>
+                            {errors.allergies && <p className="text-red-500 text-sm mt-1">{errors.allergies}</p>}
                         </div>
 
                         {/* Chronic Conditions */}
                         <div className="space-y-2">
-                            <Label className="text-sm font-medium text-gray-700">{t('patient.chronicConditions')}</Label>
+                            <Label className="text-sm font-medium text-gray-700">
+                                {t('patient.chronicConditions')} <span className="text-red-500">*</span>
+                            </Label>
                             <div className="relative group">
                                 <Activity className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                                 <Input 
@@ -328,11 +350,14 @@ export default function AddPatientMedicalRecord({ open, onOpenChange, onCreated,
                                     className="pl-10 h-11 transition-all border-gray-200 focus-visible:border-blue-500 focus-visible:ring-blue-200"
                                 />
                             </div>
+                            {errors.chronic_conditions && <p className="text-red-500 text-sm mt-1">{errors.chronic_conditions}</p>}
                         </div>
 
                         {/* Current Medications */}
                         <div className="space-y-2">
-                            <Label className="text-sm font-medium text-gray-700">{t('patient.currentMedications')}</Label>
+                            <Label className="text-sm font-medium text-gray-700">
+                                {t('patient.currentMedications')} <span className="text-red-500">*</span>
+                            </Label>
                             <div className="relative group">
                                 <Pill className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                                 <Input 
@@ -341,11 +366,14 @@ export default function AddPatientMedicalRecord({ open, onOpenChange, onCreated,
                                     className="pl-10 h-11 transition-all border-gray-200 focus-visible:border-blue-500 focus-visible:ring-blue-200"
                                 />
                             </div>
+                            {errors.current_medications && <p className="text-red-500 text-sm mt-1">{errors.current_medications}</p>}
                         </div>
 
                         {/* Medical History */}
                         <div className="space-y-2">
-                            <Label className="text-sm font-medium text-gray-700">{t('patient.medicalHistory')}</Label>
+                            <Label className="text-sm font-medium text-gray-700">
+                                {t('patient.medicalHistory')} <span className="text-red-500">*</span>
+                            </Label>
                             <div className="relative group">
                                 <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                                 <Input
@@ -354,11 +382,14 @@ export default function AddPatientMedicalRecord({ open, onOpenChange, onCreated,
                                     className="pl-10 h-11 transition-all border-gray-200 focus-visible:border-blue-500 focus-visible:ring-blue-200"
                                 />
                             </div>
+                            {errors.medical_history && <p className="text-red-500 text-sm mt-1">{errors.medical_history}</p>}
                         </div>
 
                         {/* Clinical Notes */}
                         <div className="md:col-span-2 space-y-2">
-                            <Label className="text-sm font-medium text-gray-700">{t('patient.clinicalNotes')}</Label>
+                            <Label className="text-sm font-medium text-gray-700">
+                                {t('patient.clinicalNotes')} <span className="text-red-500">*</span>
+                            </Label>
                             <div className="relative group">
                                 <Clipboard className="absolute left-3 top-3 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                                 <Textarea 
@@ -367,11 +398,14 @@ export default function AddPatientMedicalRecord({ open, onOpenChange, onCreated,
                                     className="pl-10 min-h-[100px] transition-all border-gray-200 focus-visible:border-blue-500 focus-visible:ring-blue-200"
                                 />
                             </div>
+                            {errors.clinical_notes && <p className="text-red-500 text-sm mt-1">{errors.clinical_notes}</p>}
                         </div>
 
                         {/* Recent Test Summary */}
                         <div className="md:col-span-2 space-y-2">
-                            <Label className="text-sm font-medium text-gray-700">{t('patient.recentTestSummary')}</Label>
+                            <Label className="text-sm font-medium text-gray-700">
+                                {t('patient.recentTestSummary')} <span className="text-red-500">*</span>
+                            </Label>
                             <div className="relative group">
                                 <FileBarChart className="absolute left-3 top-3 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                                 <Textarea 
@@ -380,6 +414,7 @@ export default function AddPatientMedicalRecord({ open, onOpenChange, onCreated,
                                     className="pl-10 min-h-[100px] transition-all border-gray-200 focus-visible:border-blue-500 focus-visible:ring-blue-200"
                                 />
                             </div>
+                            {errors.recent_test_summary && <p className="text-red-500 text-sm mt-1">{errors.recent_test_summary}</p>}
                         </div>
                     </div>
                 </div>

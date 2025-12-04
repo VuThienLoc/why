@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import Button from './button';
-import { ChevronLeft, Menu, Shield, ChevronDown, Plus } from 'lucide-react';
+import { ChevronLeft, Menu, Shield, Plus, ChevronDown } from 'lucide-react';
 import type { SidebarProps } from '../../types/Layout.types';
 import { LogoutButton } from './LogoutButton';
 import { useNavigate } from 'react-router-dom';
@@ -22,18 +22,7 @@ export function Sidebar({
 
   return (
     <>
-      {/* Floating menu button for mobile when sidebar is collapsed */}
-      {sidebarCollapsed && (
-        <Button
-          variant="default"
-          size="icon"
-          onClick={() => setSidebarCollapsed(false)}
-          className="fixed top-4 left-4 z-50 md:hidden h-10 w-10 rounded-full shadow-lg bg-blue-600 hover:bg-blue-700"
-          aria-label="Open menu"
-        >
-          <Menu className="h-5 w-5 text-white" />
-        </Button>
-      )}
+
 
       {/* Backdrop overlay for mobile */}
       {!sidebarCollapsed && (
@@ -52,7 +41,7 @@ export function Sidebar({
           ? 'w-0 -translate-x-full overflow-hidden pointer-events-none opacity-0 md:opacity-100 md:pointer-events-auto md:translate-x-0 md:w-16 md:overflow-visible lg:w-16' 
           : 'w-64 md:w-64 lg:w-64 opacity-100'
       } flex flex-col h-screen fixed left-0 top-0 z-40 md:z-40 lg:z-40`}>
-        
+            
         {/* Header */}
         <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 flex-shrink-0">
           {!sidebarCollapsed && (
@@ -83,7 +72,7 @@ export function Sidebar({
 
         {/* Navigation */}
         <nav className="flex-1 px-2 sm:px-4 py-4 sm:py-6 space-y-1 overflow-y-auto">
-          {navigationItems.map((item) => {
+          {navigationItems && navigationItems.map((item) => {
             const isActive = currentPage === item.id ||
               (item.id === 'user-management' && currentPage === 'add-user');
             const hasDropdown = item.dropdownItems && item.dropdownItems.length > 0;

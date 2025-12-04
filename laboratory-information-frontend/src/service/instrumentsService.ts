@@ -3,8 +3,8 @@ import type { AxiosInstance } from 'axios';
 import { apiUtils } from './apiClient'
 import type { Instrument } from '../pages/service/types/Instrument';
 
-const INSTRUMENTS_SERVICE_URL = import.meta.env.VITE_WAREHOUSE_SERVICE_URL || 'http://localhost:5003';
-const INSTRUMENTS_API_BASE_URL = '/api/warehouse/instruments';
+const INSTRUMENTS_SERVICE_URL = import.meta.env.VITE_API_WAREHOUSE_SERVICE_URL || 'http://localhost:5003';
+// const INSTRUMENTS_API_BASE_URL = '/api/warehouse/instruments';
 
 const instrumentsApiClient: AxiosInstance = axios.create({
     baseURL: INSTRUMENTS_SERVICE_URL,
@@ -115,7 +115,7 @@ export const instrumentsService = {
             if (status) {
                 params.status = status;
             }
-            const response = await instrumentsApiClient.get(`${INSTRUMENTS_API_BASE_URL}/`, {
+            const response = await instrumentsApiClient.get(`${INSTRUMENTS_SERVICE_URL}/api/warehouse/instruments/`, {
                 params
             });
             const payload = response.data as unknown;
@@ -153,7 +153,7 @@ export const instrumentsService = {
             let hasMore = true;
 
             while (hasMore) {
-                const response = await instrumentsApiClient.get(`${INSTRUMENTS_API_BASE_URL}/`, {
+                const response = await instrumentsApiClient.get(`${INSTRUMENTS_SERVICE_URL}/api/warehouse/instruments/`, {
                     params: { page, limit }
                 });
                 const payload = response.data as unknown;
@@ -195,7 +195,7 @@ export const instrumentsService = {
 
     async getInstrumentById(_id: string): Promise<Instrument> {
         try {
-            const response = await instrumentsApiClient.get(`${INSTRUMENTS_API_BASE_URL}/${_id}`);
+            const response = await instrumentsApiClient.get(`${INSTRUMENTS_SERVICE_URL}/api/warehouse/instruments/${_id}`);
             const payload = response.data as unknown;
             const item = extractDataItem(payload);
             return transformBackendInstrument(item);
@@ -225,7 +225,7 @@ export const instrumentsService = {
                 Payload.location = instrument.location;
             }
 
-            const response = await instrumentsApiClient.post(`${INSTRUMENTS_API_BASE_URL}/`, Payload);
+            const response = await instrumentsApiClient.post(`${INSTRUMENTS_SERVICE_URL}/api/warehouse/instruments/`, Payload);
             const payload = response.data as unknown;
             const item = extractDataItem(payload);
             return transformBackendInstrument(item);
@@ -271,7 +271,7 @@ export const instrumentsService = {
             backendPayload.is_active = instrument.is_active;
         }
 
-        const response = await instrumentsApiClient.put(`${INSTRUMENTS_API_BASE_URL}/${_id}`, backendPayload);
+        const response = await instrumentsApiClient.put(`${INSTRUMENTS_SERVICE_URL}/api/warehouse/instruments/${_id}`, backendPayload);
         const payload = response.data as unknown;
         const item = extractDataItem(payload);
         return transformBackendInstrument(item);
@@ -283,7 +283,7 @@ export const instrumentsService = {
 
 async deleteInstrument(_id: string): Promise<Instrument> {
     try {
-        const response = await instrumentsApiClient.delete(`${INSTRUMENTS_API_BASE_URL}/${_id}`);
+        const response = await instrumentsApiClient.delete(`${INSTRUMENTS_SERVICE_URL}/api/warehouse/instruments/${_id}`);
         const payload = response.data as unknown;
         const item = extractDataItem(payload);
         return transformBackendInstrument(item);
@@ -307,6 +307,37 @@ async getInstrumentStats(): Promise<{ total: number; active: number; ready: numb
         return stats;
     } catch (error) {
         console.error('Error fetching instrument stats:', error);
+        throw new Error(apiUtils.getErrorMessage(error));
+    }
+},
+
+async searchInstruments(keyword: string, page: number = 1, limit: number = 10): Promise<PaginatedResponse> {
+    try {
+        const response = await instrumentsApiClient.get(`${INSTRUMENTS_SERVICE_URL}/api/warehouse/instruments/search`, {
+            params: { keyword, page, limit }
+        });
+        const payload = response.data as unknown;
+        
+        if (isRecord(payload)) {
+            const list = extractDataArray(payload);
+            const total = typeof payload.total === 'number' ? payload.total : list.length;
+            const currentPage = typeof payload.page === 'number' ? payload.page : page;
+            
+            return {
+                data: list.map(transformBackendInstrument),
+                total,
+                page: currentPage
+            };
+        }
+        
+        const list = extractDataArray(payload);
+        return {
+            data: list.map(transformBackendInstrument),
+            total: list.length,
+            page: 1
+        };
+    } catch (error) {
+        console.error('Error searching instruments:', error);
         throw new Error(apiUtils.getErrorMessage(error));
     }
 }

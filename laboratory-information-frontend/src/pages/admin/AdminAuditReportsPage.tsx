@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/common/card';
-import { FileText, Download, Eye, Trash2, Shield, Database } from 'lucide-react';
+import { FileText, Download, Eye, Trash2, Shield, Database, Search } from 'lucide-react';
 import Button from '../../components/common/button';
 import { Input } from '../../components/common/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/common/select';
@@ -13,30 +13,78 @@ import { useTranslation } from 'react-i18next';
 export function AdminAuditReportsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [eventLogs, setEventLogs] = useState<EventLog[]>([]);
-  const [page, setPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [totalLogs, setTotalLogs] = useState<number>(0);
-  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name?: string } | null>(null);
-  const [serviceFilter, setServiceFilter] = useState<'all' | 'IAM_SERVICE' | 'PATIENT_SERVICE' | 'TEST_ORDER_SERVICE' | 'WAREHOUSE_SERVICE' | 'MONITORING_SERVICE' | 'CHAT_SERVICE'>('all');
-  const [actionFilter, setActionFilter] = useState<'all' | 'CREATE' | 'DELETE' | 'UPDATE'>('all');
-  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
-  const [startDate, setStartDate] = useState<string>('');
-  const [endDate, setEndDate] = useState<string>('');
+
+  // Derived state from URL
+  const page = parseInt(searchParams.get('page') || '1');
+  const searchTerm = searchParams.get('search') || '';
+  const serviceFilter = (searchParams.get('service') || 'all') as 'all' | 'IAM_SERVICE' | 'PATIENT_SERVICE' | 'TEST_ORDER_SERVICE' | 'WAREHOUSE_SERVICE';
+  const actionFilter = (searchParams.get('action') || 'all') as 'all' | 'CREATE' | 'DELETE' | 'UPDATE';
+  const sortOrder = (searchParams.get('sort') || 'newest') as 'newest' | 'oldest';
+  const startDate = searchParams.get('startDate') || '';
+  const endDate = searchParams.get('endDate') || '';
+
+  const updateFilters = (newValues: Record<string, string | number | undefined>) => {
+    const current = Object.fromEntries(searchParams.entries());
+    const merged = { ...current, ...newValues };
+    
+    if (Number(merged.page) === 1) delete merged.page;
+    if (!merged.search) delete merged.search;
+    if (merged.service === 'all') delete merged.service;
+    if (merged.action === 'all') delete merged.action;
+    if (merged.sort === 'newest') delete merged.sort;
+    if (!merged.startDate) delete merged.startDate;
+    if (!merged.endDate) delete merged.endDate;
+
+    // Remove undefined values
+    Object.keys(merged).forEach(key => {
+      if (merged[key] === undefined) {
+        delete merged[key];
+      }
+    });
+
+    setSearchParams(merged as Record<string, string>, { replace: true });
+  };
+
+  const setPage = (p: number | ((prev: number) => number)) => {
+    const val = typeof p === 'function' ? p(page) : p;
+    updateFilters({ page: val });
+  };
 
   useEffect(() => {
     let mounted = true;
     const load = async () => {
       setLoading(true);
       try {
-        // Use client-side logic if searching OR sorting by oldest (since backend only supports newest) OR filtering by date
-        const useClientSideLogic = searchTerm.trim().length > 0 || sortOrder === 'oldest' || startDate || endDate;
+        // Use client-side logic if searching OR sorting by oldest (since backend only supports newest)
+        const useClientSideLogic = searchTerm.trim().length > 0 || sortOrder === 'oldest' || !!startDate || !!endDate;
         
         const limit = useClientSideLogic ? 1000 : 10;
         const apiPage = useClientSideLogic ? 1 : page;
+
+        let apiStartDate = startDate;
+        let apiEndDate = endDate;
+
+        if (startDate && /^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
+          const startLocal = new Date(`${startDate}T00:00:00`);
+          if (!isNaN(startLocal.getTime())) {
+            apiStartDate = startLocal.toISOString();
+          }
+        }
+
+        if (endDate && /^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+          const endLocal = new Date(`${endDate}T23:59:59.999`);
+          if (!isNaN(endLocal.getTime())) {
+            apiEndDate = endLocal.toISOString();
+          }
+        }
 
         const res = await eventLogService.getAll({
           page: apiPage,
@@ -45,8 +93,8 @@ export function AdminAuditReportsPage() {
           service_name: serviceFilter,
           action: actionFilter,
           sort: sortOrder,
-          startDate,
-          endDate
+          startDate: apiStartDate,
+          endDate: apiEndDate
         });
         if (!mounted) return;
 
@@ -63,10 +111,12 @@ export function AdminAuditReportsPage() {
           }
 
           if (startDate) {
-            const start = new Date(startDate).getTime();
+            const start = new Date(startDate);
+            start.setHours(0, 0, 0, 0);
+            const startTime = start.getTime();
             logs = logs.filter(log => {
-              if (!log.occurred_at) return false;
-              return new Date(log.occurred_at).getTime() >= start;
+              const logDate = log.occurred_at ? new Date(log.occurred_at).getTime() : 0;
+              return logDate >= startTime;
             });
           }
 
@@ -75,8 +125,8 @@ export function AdminAuditReportsPage() {
             end.setHours(23, 59, 59, 999);
             const endTime = end.getTime();
             logs = logs.filter(log => {
-              if (!log.occurred_at) return false;
-              return new Date(log.occurred_at).getTime() <= endTime;
+              const logDate = log.occurred_at ? new Date(log.occurred_at).getTime() : 0;
+              return logDate <= endTime;
             });
           }
 
@@ -178,6 +228,13 @@ export function AdminAuditReportsPage() {
     return message;
   };
 
+  const getBasePath = () => {
+    if (location.pathname.startsWith('/service')) {
+      return '/service';
+    }
+    return '/admin';
+  };
+
   const renderPaginationButtons = () => {
     const items: (number | string)[] = [];
     let rangeStart = page - 2;
@@ -235,15 +292,23 @@ export function AdminAuditReportsPage() {
     });
   };
 
-  // Removed unused formatDate helper after table column restructure
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 sm:space-y-6 p-3 sm:p-4 lg:p-6">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">{t('eventLog.title')}</h1>
-          <p className="text-gray-600 mt-1">{t('eventLog.subtitle')}</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('eventLog.title')}</h1>
+          <p className="text-sm sm:text-base text-gray-600 mt-1">{t('eventLog.subtitle')}</p>
         </div>
+        <div className="relative w-full sm:w-auto">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder={t('eventLog.searchPlaceholder')}
+              value={searchTerm}
+              onChange={(e) => updateFilters({ search: e.target.value, page: 1 })}
+              className="pl-10 w-full sm:w-64 md:w-80"
+            />
+          </div>
       </div>
       {loading && (
         <div className="text-sm text-gray-500">{t('eventLog.loading')}</div>
@@ -254,25 +319,11 @@ export function AdminAuditReportsPage() {
 
       {/* Filters */}
       <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col gap-3">
-            {/* Search: only user name/email */}
-            <div className="w-full">
-              <div className="relative">
-                <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder={t('eventLog.searchPlaceholder')}
-                  value={searchTerm}
-                  onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
-                  className="pl-10 w-full"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-row gap-4">
+        <CardContent className="p-4 sm:p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-center">
               {/* Service filter */}
-              <div className="w-full lg:min-w-[200px]">
-                <Select value={serviceFilter} onValueChange={(v) => { setServiceFilter(v as typeof serviceFilter); setPage(1); }}>
+              <div className="w-full">
+                <Select value={serviceFilter} onValueChange={(v) => updateFilters({ service: v, page: 1 })}>
                   <SelectTrigger className="bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 w-full">
                     <SelectValue placeholder={t('eventLog.service')} />
                   </SelectTrigger>
@@ -287,8 +338,8 @@ export function AdminAuditReportsPage() {
               </div>
 
               {/* Action filter */}
-              <div className="w-full lg:min-w-[150px]">
-                <Select value={actionFilter} onValueChange={(v) => { setActionFilter(v as typeof actionFilter); setPage(1); }}>
+              <div className="w-full">
+                <Select value={actionFilter} onValueChange={(v) => updateFilters({ action: v, page: 1 })}>
                   <SelectTrigger className="bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 w-full">
                     <SelectValue placeholder={t('eventLog.action')} />
                   </SelectTrigger>
@@ -302,8 +353,8 @@ export function AdminAuditReportsPage() {
               </div>
 
               {/* Sort by time */}
-              <div className="w-full lg:min-w-[150px]">
-                <Select value={sortOrder} onValueChange={(v) => { setSortOrder(v as typeof sortOrder); setPage(1); }}>
+              <div className="w-full">
+                <Select value={sortOrder} onValueChange={(v) => updateFilters({ sort: v, page: 1 })}>
                   <SelectTrigger className="bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 w-full">
                     <SelectValue placeholder={t('eventLog.time')} />
                   </SelectTrigger>
@@ -315,12 +366,19 @@ export function AdminAuditReportsPage() {
               </div>
 
               {/* Start Date */}
-              <div className="w-full lg:min-w-[150px]">
-                <div className="relative">
+              <div className="flex items-center gap-2 w-full">
+                <span className="text-sm font-medium whitespace-nowrap">{t('eventLog.startDate')}:</span>
+                <div className="flex-1">
                   <Input
-                    type="date"
+                    type={startDate ? "date" : "text"}
+                    onFocus={(e) => (e.target.type = "date")}
+                    onBlur={(e) => { 
+                      if (!e.target.value) e.target.type = "text"; 
+                    }}
                     value={startDate}
-                    onChange={(e) => { setStartDate(e.target.value); setPage(1); }}
+                    onChange={(e) => {
+                      updateFilters({ startDate: e.target.value, page: 1 });
+                    }}
                     className="w-full"
                     placeholder={t('eventLog.startDate')}
                   />
@@ -328,50 +386,56 @@ export function AdminAuditReportsPage() {
               </div>
 
               {/* End Date */}
-              <div className="w-full lg:min-w-[150px]">
-                <div className="relative">
+              <div className="flex items-center gap-2 w-full">
+                <span className="text-sm font-medium whitespace-nowrap">{t('eventLog.endDate')}:</span>
+                <div className="flex-1">
                   <Input
-                    type="date"
+                    type={endDate ? "date" : "text"}
+                    onFocus={(e) => (e.target.type = "date")}
+                    onBlur={(e) => { 
+                      if (!e.target.value) e.target.type = "text"; 
+                    }}
                     value={endDate}
-                    onChange={(e) => { setEndDate(e.target.value); setPage(1); }}
+                    onChange={(e) => {
+                      updateFilters({ endDate: e.target.value, page: 1 });
+                    }}
                     className="w-full"
                     placeholder={t('eventLog.endDate')}
                   />
                 </div>
               </div>
-            </div>
 
-            {(searchTerm || serviceFilter !== 'all' || actionFilter !== 'all' || sortOrder !== 'newest' || startDate || endDate) && (
-              <div className="flex items-center justify-end lg:justify-start">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setSearchTerm('');
-                    setServiceFilter('all');
-                    setActionFilter('all');
-                    setSortOrder('newest');
-                    setStartDate('');
-                    setEndDate('');
-                    setPage(1);
-                  }}
-                  className="w-full sm:w-auto"
-                >
-                  {t('eventLog.clearFilter')}
-                </Button>
-              </div>
-            )}
-          </div>
+              {(searchTerm || serviceFilter !== 'all' || actionFilter !== 'all' || sortOrder !== 'newest' || startDate || endDate) && (
+                <div className="col-span-1 sm:col-span-2 lg:col-span-5 flex justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => updateFilters({
+                      search: '',
+                      service: 'all',
+                      action: 'all',
+                      sort: 'newest',
+                      startDate: '',
+                      endDate: '',
+                      page: 1
+                    })}
+                    className="w-full sm:w-auto"
+                  >
+                    {t('eventLog.clearFilter')}
+                  </Button>
+                </div>
+              )}
+            </div>
         </CardContent>
       </Card>
 
       {/* Audit Logs Table */}
       <Card>
-        <CardHeader className="p-4 sm:p-5 pb-2 sm:pb-2">
-          <CardTitle className="text-base sm:text-lg">{t('eventLog.title')} ({totalLogs})</CardTitle>
-          <CardDescription className="text-xs sm:text-sm">{t('eventLog.subtitle')}</CardDescription>
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="text-lg sm:text-xl">{t('eventLog.title')} ({totalLogs})</CardTitle>
+          <CardDescription className="text-sm sm:text-base">{t('eventLog.subtitle')}</CardDescription>
         </CardHeader>
-        <CardContent className="p-4 sm:p-5 pt-0 sm:pt-0">
-          <div className="overflow-x-auto -mx-4 sm:mx-0">
+        <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
+          <div className="hidden lg:block overflow-x-auto -mx-4 sm:mx-0">
             <div className="inline-block min-w-full align-middle px-4 sm:px-0">
               <table className="w-full border-collapse table-fixed min-w-[1000px]">
                 <thead>
@@ -429,7 +493,9 @@ export function AdminAuditReportsPage() {
                               size="icon"
                               title={t('eventLog.viewDetail')}
                               disabled={!log.event_id}
-                              onClick={() => navigate(`/admin/audit-reports/${log.event_id}`)}
+                              onClick={() => {
+                                const basePath = getBasePath();
+                                navigate(`${basePath}/audit-reports/${log.event_id}`);}}
                               className="h-8 w-8"
                             >
                               <Eye className="w-4 h-4" />
@@ -452,6 +518,75 @@ export function AdminAuditReportsPage() {
                 </tbody>
               </table>
             </div>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="lg:hidden space-y-4">
+            {eventLogs.map((log) => (
+              <div key={log.event_id || log._id || Math.random()} className="bg-white border rounded-lg p-4 shadow-sm flex flex-col gap-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    {log.operator_avatar ? (
+                      <img 
+                        src={log.operator_avatar} 
+                        alt={log.operator_name || 'User'} 
+                        className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
+                        {String(log.operator_name ?? log.operator_gmail ?? 'U').charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <div className="font-medium text-gray-900 truncate">{log.operator_name || t('eventLog.unknown')}</div>
+                      {log.operator_gmail && <div className="text-xs text-gray-500 truncate">{log.operator_gmail}</div>}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        const basePath = getBasePath();
+                        navigate(`${basePath}/audit-reports/${log.event_id}`);
+                      }}
+                      className="h-8 w-8 text-gray-500"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-red-600 hover:text-red-700 h-8 w-8"
+                      onClick={() => setDeleteTarget({ id: (log.event_id || ''), name: log.operator_name })}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="text-gray-500">{t('eventLog.table.service')}</div>
+                  <div className="font-medium text-right truncate">{getServiceDisplayName(log.service_name || "")}</div>
+                  
+                  <div className="text-gray-500">{t('eventLog.table.actionAndMessage')}</div>
+                  <div className="flex items-center justify-end gap-2">
+                    {getActionIcon(String(log.action))}
+                    <span className="font-medium">{log.action ? t(`eventLog.actions.${String(log.action).toUpperCase()}`) : '—'}</span>
+                  </div>
+                </div>
+
+                {log.event_message && (
+                  <div className="bg-gray-50 p-3 rounded-md text-sm text-gray-600 break-words">
+                    {getEventMessage(log.event_message)}
+                  </div>
+                )}
+
+                <div className="text-xs text-gray-400 text-right border-t pt-2 mt-1">
+                  {log.occurred_at ? new Date(log.occurred_at).toLocaleString('vi-VN') : '—'}
+                </div>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>

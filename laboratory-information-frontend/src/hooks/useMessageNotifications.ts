@@ -186,12 +186,52 @@ export function useMessageNotifications({
 
   useEffect(() => {
     if (!user || !enabled) return;
-    void pollRooms();
-    const interval = setInterval(() => {
-      void pollRooms();
-    }, pollInterval);
+    
+    let interval: ReturnType<typeof setInterval> | null = null;
+    
+    const pollIfVisible = () => {
+      // Chỉ poll khi tab đang active
+      if (document.visibilityState === 'visible') {
+        void pollRooms();
+      }
+    };
+    
+    const startPolling = () => {
+      // Dừng interval cũ nếu có
+      if (interval) {
+        clearInterval(interval);
+      }
+      // Poll ngay lập tức
+      pollIfVisible();
+      // Tạo interval mới
+      interval = setInterval(pollIfVisible, pollInterval);
+    };
+    
+    const stopPolling = () => {
+      if (interval) {
+        clearInterval(interval);
+        interval = null;
+      }
+    };
+    
+    // Bắt đầu polling
+    startPolling();
+    
+    // Dừng polling khi tab không active, tiếp tục khi tab active lại
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        startPolling();
+      } else {
+        stopPolling();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    return () => clearInterval(interval);
+    return () => {
+      stopPolling();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [enabled, pollInterval, pollRooms, user]);
 
   return {

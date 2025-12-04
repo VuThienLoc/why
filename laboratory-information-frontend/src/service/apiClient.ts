@@ -1,7 +1,7 @@
 import axios, { AxiosError } from 'axios';
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = import.meta.env.VITE_API_IAM_SERVICE_URL|| 'http://localhost:3000/api';
 
 // Token refresh state management
 let isRefreshing = false;

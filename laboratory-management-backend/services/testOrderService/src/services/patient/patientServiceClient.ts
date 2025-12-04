@@ -30,22 +30,38 @@ class PatientServiceClient {
     this.internalApiKey = process.env.INTERNAL_API_KEY || "internal-service-secret-key-2025";
   }
 
-async getPatientById(patientId: string): Promise<Patient | null> {
-  try {
-    const url = `${this.baseUrl}/api/patients/viewDetail/${patientId}`;
-    const headers = { "X-Internal-API-Key": this.internalApiKey };
-    const res = await HttpClient.get<{ patient: Patient }>(url, { headers });
-    const patient = res.patient;
-    if (patient?.user_id) {
-      patient.user = await iamServiceClient.getUserById(patient.user_id);
-    }
+  async getPatientById(patientId: string): Promise<Patient | null> {
+    try {
+      const url = `${this.baseUrl}/api/patients/viewDetail/${patientId}`;
+      const headers = { "X-Internal-API-Key": this.internalApiKey };
+      const res = await HttpClient.get<{ patient: Patient }>(url, { headers });
+      const patient = res.patient;
+      if (patient?.user_id) {
+        patient.user = await iamServiceClient.getUserById(patient.user_id);
+      }
 
-    return patient;
-  } catch (err: any) {
-    console.error(`[PatientService] Error fetching patient ${patientId}:`, err.message);
-    return null;
+      return patient;
+    } catch (err: any) {
+      console.error(`[PatientService] Error fetching patient ${patientId}:`, err.message);
+      return null;
+    }
   }
-}
+
+  async getPatientByUserId(user_id: string): Promise<Patient | null> {
+    try {
+      const url = `${this.baseUrl}/api/patients/patientByUserId/${user_id}`;
+      const headers = { "X-Internal-API-Key": this.internalApiKey };
+      const res = await HttpClient.get<{ patient: Patient }>(url, { headers });
+      const patient = res.patient;
+      if (patient?.user_id) {
+        patient.user = await iamServiceClient.getUserById(patient.user_id);
+      }
+      return patient;
+    } catch (err: any) {
+      console.error(`[PatientService] Error fetching patient ${user_id}:`, err.message);
+      return null;
+    }
+  }
 
   async getPatientsByIds(patientIds: string[]): Promise<Map<string, Patient>> {
     const map = new Map<string, Patient>();

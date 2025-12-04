@@ -4,7 +4,7 @@ import { apiUtils } from './apiClient';
 
 // Create a dedicated axios instance for TestOrder service (port 5002)
 // TestItem is part of testOrderService
-const TEST_ORDER_SERVICE_URL = import.meta.env.VITE_TEST_ORDER_SERVICE_URL || 'http://localhost:5002';
+const TEST_ORDER_SERVICE_URL = import.meta.env.VITE_API_TEST_ORDER_SERVICE_URL || 'http://localhost:5002';
 const testItemApiClient: AxiosInstance = axios.create({
   baseURL: TEST_ORDER_SERVICE_URL,
   timeout: 10000,

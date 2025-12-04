@@ -2,16 +2,33 @@ import axios from 'axios';
 import type { AxiosInstance } from 'axios';
 
 const MESSAGE_SERVICE_URL =
-  import.meta.env.VITE_MESSAGE_SERVICE_URL ?? 'http://localhost:4001/api';
+  import.meta.env.VITE_API_MESSAGE_SERVICE_URL || 'http://localhost:4001';
 
 const messageServiceClient: AxiosInstance = axios.create({
-  baseURL: MESSAGE_SERVICE_URL,
+  baseURL: `${MESSAGE_SERVICE_URL}/api`,
   timeout: 15000,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+// Attach Authorization header with JWT token
+messageServiceClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      config.headers = config.headers || {};
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 export interface RoomSummary {
   _id: string;

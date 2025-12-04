@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Save, X, Mail, Phone, User as UserIcon, Edit3, Calendar, Shield, MapPin, Activity, Upload, Loader2 } from "lucide-react";
 import type { User } from "../types/User";
 import { Input } from "../components/common/input";
@@ -39,28 +39,15 @@ export default function Profile({ currentUser, onUpdateProfile }: ProfileProps) 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { t } = useTranslation();
 
-
-  const normalizeGender = (gender?: string) => {
-    if (!gender) return '';
-    const g = gender.toLowerCase();
-    if (g === 'male') return 'Male';
-    if (g === 'female') return 'Female';
-    if (g === 'other') return 'Other';
-    return '';
-  };
-
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const fetchProfile = async () => {
+  
+  const fetchProfile = useCallback(async () => {
     try {
       setLoading(true);
       const userData = await profileService.getProfile(currentUser.id);
       setProfile(userData);
       setFormData({
         ...userData,
-        gender: normalizeGender(userData.gender),
+        gender: userData.gender,
       });
 
     } catch (error) {
@@ -68,7 +55,12 @@ export default function Profile({ currentUser, onUpdateProfile }: ProfileProps) 
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser.id]);
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+
+ 
 
   const handleChange = (field: keyof UserProfileData, value: string | number) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -78,7 +70,7 @@ export default function Profile({ currentUser, onUpdateProfile }: ProfileProps) 
 
   const handleSave = async () => {
     try {
-      await profileService.updateProfile(formData);
+      await profileService.updateProfile( formData);
 
       toast.success(t('userProfile.updateProfileSuccess'));
       setIsEditing(false);
@@ -260,7 +252,7 @@ export default function Profile({ currentUser, onUpdateProfile }: ProfileProps) 
         <div className="space-y-4 xs:space-y-6">
           <Card className="border-none shadow-md overflow-hidden">
             <CardHeader className="bg-gray-50 border-b border-gray-100 pb-3 xs:pb-4">
-              <CardTitle className="text-base xs:text-lg font-semibold flex items-center text-gray-800">
+              <CardTitle className="pt-5 text-base xs:text-lg font-semibold flex items-center text-gray-800">
                 <Activity className="w-4 h-4 xs:w-5 xs:h-5 mr-2 text-blue-500" />
                 {t('userProfile.statusAndContact')}
               </CardTitle>
@@ -354,14 +346,14 @@ export default function Profile({ currentUser, onUpdateProfile }: ProfileProps) 
                 <div className="space-y-2">
                   <Label className="text-gray-600 text-xs xs:text-sm">{t('userProfile.gender')}</Label>
                   <select
-                    value={normalizeGender(formData.gender)}
+                    value={formData.gender}
                     onChange={(e) => handleChange("gender", e.target.value)}
                     disabled={!isEditing}
                     className="w-full h-9 xs:h-10 px-2 xs:px-3 py-2 rounded-md border border-gray-200 bg-gray-50/50 text-xs xs:text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
-                    <option value="Male">{t('userProfile.male')}</option>
-                    <option value="Female">{t('userProfile.female')}</option>
-                    <option value="Other">{t('userProfile.other')}</option>
+                    <option value="male">{t('userProfile.male')}</option>
+                    <option value="female">{t('userProfile.female')}</option>
+                    <option value="other">{t('userProfile.other')}</option>
                   </select>
                 </div>
 

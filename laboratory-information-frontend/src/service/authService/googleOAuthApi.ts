@@ -3,11 +3,13 @@ import type { User } from "../../types/User";
 
 export interface GoogleOAuthResponse {
   message: string;
+  accessToken: string; // JWT access token from backend
+  refreshToken: string; // JWT refresh token from backend
   user: {
     id: string;
     email: string;
     fullName: string;
-    role: string;
+    role: string[]; // Array of roles
     provider: string;
     avatar?: string;
   };
@@ -19,11 +21,9 @@ export interface GoogleOAuthResponse {
  * Redirect user đến Google OAuth page
  */
 export function initiateGoogleLogin(returnTo: string = '/'): void {
-  const baseUrl = import.meta.env.VITE_API_BASE_URL;
+  const baseUrl = import.meta.env.VITE_API_IAM_SERVICE_URL|| 'http://localhost:3000/api';
   // Kiểm tra xem baseUrl đã có /api chưa để tránh duplicate
-  const googleLoginUrl = baseUrl.endsWith('/api') 
-    ? `${baseUrl}/google?returnTo=${encodeURIComponent(returnTo)}`
-    : `${baseUrl}/api/google?returnTo=${encodeURIComponent(returnTo)}`;
+  const googleLoginUrl = `${baseUrl}/google?returnTo=${encodeURIComponent(returnTo)}`;
   
   // Redirect to Google OAuth
   window.location.href = googleLoginUrl;
@@ -50,6 +50,18 @@ export async function handleGoogleCallback(): Promise<User | null> {
     });
 
     if (response?.user) {
+      // Save accessToken to localStorage
+      if (response.accessToken) {
+        localStorage.setItem('authToken', response.accessToken);
+        console.log('[Google OAuth] Access token saved to localStorage');
+      }
+
+      // Save refreshToken to localStorage (optional, for future use)
+      if (response.refreshToken) {
+        localStorage.setItem('refreshToken', response.refreshToken);
+        console.log('[Google OAuth] Refresh token saved to localStorage');
+      }
+
       // Mapping dữ liệu từ Google OAuth response sang User type
       const googleUser = response.user;
       
@@ -57,7 +69,7 @@ export async function handleGoogleCallback(): Promise<User | null> {
         id: googleUser.id,
         name: googleUser.fullName,
         email: googleUser.email,
-        role: Array.isArray(googleUser.role) ? googleUser.role.flat() : [googleUser.role],
+        role: (Array.isArray(googleUser.role) ? googleUser.role : [googleUser.role]) as User['role'],
         active: true,
         permissions: [], // Google OAuth users có thể cần permissions mặc định
       };
@@ -79,12 +91,24 @@ export async function handleGoogleCallback(): Promise<User | null> {
 export function handleGoogleCallbackFromData(responseData: GoogleOAuthResponse): User | null {
   try {
     if (responseData?.user) {
+      // Save accessToken to localStorage
+      if (responseData.accessToken) {
+        localStorage.setItem('authToken', responseData.accessToken);
+        console.log('[Google OAuth] Access token saved to localStorage from data');
+      }
+
+      // Save refreshToken to localStorage (optional, for future use)
+      if (responseData.refreshToken) {
+        localStorage.setItem('refreshToken', responseData.refreshToken);
+        console.log('[Google OAuth] Refresh token saved to localStorage from data');
+      }
+
       const googleUser = responseData.user;
       const user: User = {
         id: googleUser.id,
         name: googleUser.fullName,
         email: googleUser.email,
-        role: Array.isArray(googleUser.role) ? googleUser.role.flat() : [googleUser.role],
+        role: (Array.isArray(googleUser.role) ? googleUser.role : [googleUser.role]) as User['role'],
         active: true,
         permissions: [], 
       };

@@ -266,20 +266,6 @@ export function UserForm({ mode, user, onSubmit, onCancel }: UserFormProps) {
               {errors.address && <p className="mt-1 sm:mt-1.5 md:mt-2 text-xs sm:text-sm text-red-500">{errors.address}</p>}
             </div>
 
-            {/* Active */}
-            {mode !== 'create' && (
-              <div className="md:col-span-2 flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="active"
-                  checked={formData.active}
-                  onChange={(e) => handleChange('active', e.target.checked)}
-                  disabled={isReadOnly}
-                  className="w-4 h-4 sm:w-5 sm:h-5"
-                />
-                <Label htmlFor="active" className="text-xs sm:text-sm md:text-base">Tài khoản hoạt động</Label>
-              </div>
-            )}
           </div>
         </form>
 

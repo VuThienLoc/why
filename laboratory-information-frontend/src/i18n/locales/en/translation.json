@@ -1,4 +1,23 @@
 {
+  "dashboard": {
+    "welcomeBack": "Welcome back",
+    "welcomeBackUser": "Welcome back, {{name}}",
+    "overview": "Here is an overview of your recent activity",
+    "totalTests": "Total Tests",
+    "all": "All",
+    "pendingTests": "Pending Tests",
+    "pending": "Pending",
+    "processingTests": "Processing Tests",
+    "processing": "Processing",
+    "completedTests": "Completed Tests",
+    "completedSuccess": "Completed Successfully",
+    "recentResults": "Recent Test Results",
+    "recentResultsDesc": "Your latest test results",
+    "orderDate": "Order Date",
+    "completionDate": "Completion Date",
+    "noResults": "No test results yet.",
+    "loading": "Loading..."
+  },
   "header": {
     "appName": "LIMS Pro",
     "appDescription": "Laboratory Information Management System",
@@ -242,7 +261,7 @@
     "emailPlaceholder": "Your email"
   },
   "admin": {
-    "role": "Role"
+    "role": "Administrator"
   },
   "manager": {
     "managerRole": "Manager",
@@ -251,6 +270,8 @@
     "instruments": "Instruments",
     "userManagementDescription": "Manage user accounts in the system",
     "createUser": "Create User",
+    "viewUser": "View user",
+    "editUser": "Edit user",
     "totalUsers": "Total Users",
     "activeUsers": "Active Users",
     "lockedUsers": "Locked Users",
@@ -535,6 +556,40 @@
       "saving": "Saving...",
       "success": "Medical record updated successfully",
       "error": "Failed to update medical record"
+    },
+    "updateModal": {
+      "titleCreate": "Add New Patient",
+      "titleEdit": "Edit Patient",
+      "titleView": "Patient Details",
+      "fullName": "Full Name",
+      "patientCode": "Patient Code",
+      "email": "Email",
+      "identityNumber": "ID Number",
+      "phoneNumber": "Phone Number",
+      "phoneNumberRequired": "Phone Number",
+      "gender": "Gender",
+      "selectGender": "Select",
+      "male": "Male",
+      "female": "Female",
+      "other": "Other",
+      "age": "Age",
+      "dateOfBirth": "Date of Birth",
+      "address": "Address",
+      "emergencyContactInfo": "Emergency Contact Information",
+      "emergencyContactName": "Contact Name",
+      "emergencyContactNameRequired": "Contact Name",
+      "emergencyContactPhone": "Phone Number",
+      "close": "Close",
+      "cancel": "Cancel",
+      "create": "Add Patient",
+      "update": "Update",
+      "validation": {
+        "emergencyNameRequired": "Contact name is required",
+        "emergencyNameNoNumbers": "Contact name cannot contain numbers",
+        "emergencyPhoneRequired": "Phone number is required",
+        "emergencyPhoneNoLetters": "Phone number cannot contain letters",
+        "emergencyPhoneInvalid": "Phone number contains invalid characters"
+      }
     }
   },
   "testOrder":{
@@ -556,6 +611,7 @@
       "processing": "Processing",
       "completed":"Completed",
       "status": "Status",
+      "statusChanged": "Changed to {{status}}",
       "biochemistry": "Biochemistry",
       "generalHematology": "General Hematology",
       "microbiology": "Microbiology",
@@ -779,6 +835,10 @@
   "testResult": {
     "title": "Test Results",
     "subtitle": "Enter and manage completed test results",
+    "aiReviewFailed": "Failed to generate AI review",
+    "aiReviewSuccess": "AI review generated successfully",
+    "aiReviewing": "Processing...",
+    "aiReview": "AI Review",
     "resultsCount": "{{current}} / {{total}} test results",
     "foundResults": "(found {{found}} / {{total}})",
     "search": "Search",
@@ -1011,7 +1071,6 @@
     "title": "Audit Logs",
     "subtitle": "System activity reports and audit logs",
     "exportReport": "Export Report",
-    "advancedFilter": "Advanced Filter",
     "loading": "Loading data...",
     "error": "Failed to load event logs",
     "searchPlaceholder": "Search by user name or email",
@@ -1031,6 +1090,8 @@
     "time": "Time",
     "newest": "Newest",
     "oldest": "Oldest",
+    "startDate": "Start Date",
+    "endDate": "End Date",
     "clearFilter": "Clear Filter",
     "table": {
       "user": "User",
@@ -1104,6 +1165,9 @@
       "gender": "Gender",
       "dob": "Date of Birth",
       "identityNumber": "ID Number",
+      "isActive": "Active status",
+      "active": "Active",
+      "inactive": "Inactive",
       "role": "Role",
       "male": "Male",
       "female": "Female"
@@ -1113,6 +1177,8 @@
       "createdMedical": "Created Medical Record Information",
       "deletedPatient": "Deleted Patient Information",
       "deletedMedical": "Deleted Medical Record Information",
+      "patientInfo": "Patient Information",
+      "recordInfo": "Medical Record Information",
       "patientCode": "Patient Code",
       "patientName" :"Patient Name",
       "age": "Age",
@@ -1130,6 +1196,9 @@
     "testOrder": {
       "createdOrder": "Created Test Order Information",
       "deletedOrder": "Deleted Test Order Information",
+      "patientInfo": "Patient Information",
+      "orderInfo": "Test Order Information",
+      "statusUpdateInfo": "Test Order Status Update",
       "patientName": "Patient Name",
       "testType": "Test Type",
       "instrumentName": "Instrument Name",
@@ -1148,7 +1217,11 @@
       "instrumentType": "Instrument Type",
       "manufacturer": "Manufacturer",
       "location": "Location",
-      "status": "Status"
+      "status": "Status",
+      "reagentInfo": "Reagent Information",
+      "instrumentInfo": "Instrument Information",
+      "reagentCode": "Reagent Code",
+      "reagentName": "Reagent Name"
     }
   }
 }

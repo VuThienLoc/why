@@ -4,19 +4,20 @@ import Button from '../../components/common/button';
 import { Input } from '../../components/common/input';
 import { Label } from '../../components/common/label';
 import Pagination from '../../components/common/pagination';
-import { toast } from 'sonner';
 import {
   Search,
   FlaskConical,
   X,
-  Activity,
   ChevronDown
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuthContext } from '../../hooks/useAuthContext';
 import { testResultService } from '../../service/testResultService';
 import { Skeleton } from '../../components/common/skeleton';
+import { FormattedText } from '../../components/common/FormattedText';
 import type { TestResult, TestResultDetail } from '../labuser/types/TestResultTypes';
+
+
 
 // Read-only View Detail Modal
 const ViewDetailModal: React.FC<{
@@ -39,6 +40,17 @@ const ViewDetailModal: React.FC<{
       year: 'numeric'
     });
   };
+  const getTranslatedTestType = (testType: string) => {
+  switch (testType) {
+    case 'Sinh hóa máu': return t('testOrder.biochemistry');
+    case 'Huyết học tổng quát': return t('testOrder.generalHematology');
+    case 'Vi sinh': return t('testOrder.microbiology');
+    case 'Miễn dịch': return t('testOrder.immunology');
+    case 'Nội tiết': return t('testOrder.endocrinology');
+    case 'Ung thư học': return t('testOrder.oncology');
+    default: return testType;
+  }
+};
 
   return (
     <div className="fixed inset-0 backdrop-blur-md flex items-center justify-center z-50 p-2 sm:p-4 animate-in fade-in duration-300">
@@ -62,7 +74,7 @@ const ViewDetailModal: React.FC<{
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">{t('testResult.modal.testType')}</p>
-                  <p className="font-medium">{result.test_type}</p>
+                  <p className="font-medium">{getTranslatedTestType(result.test_type)}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">{t('testResult.modal.testItem')}</p>
@@ -92,7 +104,10 @@ const ViewDetailModal: React.FC<{
             <div className="p-3 sm:p-4 bg-blue-50 rounded-lg">
               <p className="text-sm text-gray-600 mb-2">{t('testResult.modal.reviewerComment')}</p>
               {result.reviewerComment ? (
-                <p className="text-gray-800">{result.reviewerComment}</p>
+                <FormattedText 
+                  text={result.reviewerComment} 
+                  className="text-gray-800 whitespace-pre-wrap" 
+                />
               ) : (
                 <p className="text-gray-400 italic">{t('testResult.modal.noComment')}</p>
               )}
@@ -117,6 +132,19 @@ const ViewDetailModal: React.FC<{
 const TestResults: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuthContext();
+
+  const getTranslatedTestType = (testType: string) => {
+    switch (testType) {
+      case 'Sinh hóa máu': return t('testOrder.biochemistry');
+      case 'Huyết học tổng quát': return t('testOrder.generalHematology');
+      case 'Vi sinh': return t('testOrder.microbiology');
+      case 'Miễn dịch': return t('testOrder.immunology');
+      case 'Nội tiết': return t('testOrder.endocrinology');
+      case 'Ung thư học': return t('testOrder.oncology');
+      default: return testType;
+    }
+  };
+
   const [results, setResults] = useState<TestResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -130,7 +158,7 @@ const TestResults: React.FC = () => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 3;
 
   const loadTestResults = useCallback(async () => {
     if (!user?.id) return;
@@ -146,7 +174,7 @@ const TestResults: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, currentPage, t]);
+  }, [user?.id, currentPage]);
 
   useEffect(() => {
     loadTestResults();
@@ -234,12 +262,7 @@ const TestResults: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex sm:items-end">
-              <Button variant="outline" onClick={loadTestResults} className="flex items-center w-full sm:w-auto justify-center">
-                <Activity className="w-4 h-4 mr-2" />
-                {t('testResult.refresh')}
-              </Button>
-            </div>
+            
           </div>
         </CardContent>
       </Card>
@@ -283,7 +306,7 @@ const TestResults: React.FC = () => {
                           <div className="flex justify-between items-start sm:items-center gap-2">
                             <div className="flex-1 min-w-0">
                               <h3 className="text-sm sm:text-base font-semibold text-gray-900 truncate">
-                                {t('testResult.testType')}: {result.test_type}
+                                {t('testResult.testType')}: {getTranslatedTestType(result.test_type)}
                               </h3>
                               
                             </div>

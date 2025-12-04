@@ -1,13 +1,13 @@
 import axios from 'axios';
 import type { AxiosInstance } from 'axios';
 import { apiUtils } from './apiClient';
-import type { TestOrder } from '../pages/labuser/types/TestOrderTypes';
+import type { TestOrder } from '@/pages/labuser/types/TestOrderTypes.ts';
 
 // Create a dedicated axios instance for TestOrder service (port 5002)
-const TEST_ORDER_SERVICE_URL = import.meta.env.VITE_TEST_ORDER_SERVICE_URL || 'http://localhost:5002';
+const TEST_ORDER_SERVICE_URL = import.meta.env.VITE_API_TEST_ORDER_SERVICE_URL || 'http://localhost:5002';
 const testOrderApiClient: AxiosInstance = axios.create({
   baseURL: TEST_ORDER_SERVICE_URL,
-  timeout: 10000,
+  timeout: 30000,
   withCredentials: true, // Enable cookies for JWT authentication
   headers: {
     'Content-Type': 'application/json',
@@ -49,6 +49,7 @@ interface BackendTestOrder {
   test_type: string
   created_at: string;
   created_by: string;
+  updated_at?: string;
   due_date?: string;
   is_deleted?: boolean;
   deleted_at?: string;
@@ -131,7 +132,8 @@ const transformBackendOrder = (backendOrder: BackendTestOrder): TestOrder => {
     patient_id: backendOrder.patient_id,
     test_type: backendOrder.test_type,
     created_at: formatDate(backendOrder.created_at),
-    created_by: backendOrder.user?.fullName,
+    created_by: backendOrder.user?.fullName || backendOrder.created_by,
+    updated_at: formatDate(backendOrder.updated_at),
     status: normalizeStatus(backendOrder.status),
     due_date: formatDate(backendOrder.due_date),
     is_deleted: backendOrder.is_deleted || undefined,
@@ -169,7 +171,6 @@ export const testOrderService = {
           params: { page, limit }
         }
       );
-      console.log("response", response.data);
       
       // Handle both paginated response and direct array response
       const ordersArray = Array.isArray(response.data) 
@@ -200,7 +201,6 @@ export const testOrderService = {
   async getTestOrderById(_id: string): Promise<TestOrder | null> {
     try {
       const response = await testOrderApiClient.get<BackendTestOrder>(`${TEST_ORDER_API_BASE_URL}/${_id}`);
-      console.log("response", response.data)
       return transformBackendOrder(response.data);
     } catch (error) {
       console.error('Error fetching test order:', error);
@@ -211,7 +211,6 @@ export const testOrderService = {
   // Create new test order
   // testOrderService.ts
   async createTestOrder(orderData: Partial<TestOrder>): Promise<TestOrder> {
-    console.log("orderData", orderData)
     try {
       if (!orderData.created_by) {
         throw new Error('created_by is required to create a test order');
@@ -262,7 +261,6 @@ export const testOrderService = {
         delete backendData.patient_id;
       }
 
-      console.log('Sending to backend:', backendData); // DEBUG
  
       const response = await testOrderApiClient.post<BackendTestOrder>(
         `${TEST_ORDER_API_BASE_URL}/create`,
@@ -352,8 +350,6 @@ export const testOrderService = {
         }
       );
       
-      console.log("search response", response.data);
-      
       const ordersArray = response.data.data || [];
       const orders = ordersArray.map(transformBackendOrder);
       
@@ -369,6 +365,30 @@ export const testOrderService = {
       return { orders, pagination };
     } catch (error) {
       console.error('Error searching test orders:', error);
+      throw new Error(apiUtils.getErrorMessage(error));
+    }
+  },
+
+  async getTestOrdersByUserId(userId: string): Promise<TestOrder[]> {
+    try {
+      const response = await testOrderApiClient.get<any>(`${TEST_ORDER_API_BASE_URL}/group-by-userId`, {
+        params: { user_id: userId }
+      });
+      
+      const responseData = response.data;
+      let ordersArray: any[] = [];
+
+      if (responseData?.data?.orders && Array.isArray(responseData.data.orders)) {
+        ordersArray = responseData.data.orders;
+      } else if (responseData?.orders && Array.isArray(responseData.orders)) {
+        ordersArray = responseData.orders;
+      } else if (Array.isArray(responseData)) {
+        ordersArray = responseData;
+      }
+
+      return ordersArray.map(transformBackendOrder);
+    } catch (error) {
+      console.error('Error fetching test orders by user id:', error);
       throw new Error(apiUtils.getErrorMessage(error));
     }
   }

@@ -174,6 +174,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (location.pathname === '/login') {
       setUser(null);
       localStorage.removeItem("limsUser");
+      localStorage.removeItem("authToken"); // Remove token from localStorage
       hasInitialized.current = false; // Reset flag
       setLoading(false);
       return;
@@ -188,6 +189,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     document.cookie = 'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
     document.cookie = 'refreshToken=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
     localStorage.removeItem("limsUser");
+    localStorage.removeItem("authToken"); // Remove token from localStorage
     setUser(null);
     hasInitialized.current = false; // Reset flag để có thể initialize lại khi login
     window.location.href = '/login';

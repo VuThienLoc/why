@@ -3,11 +3,11 @@ import type { AxiosInstance } from 'axios';
 
 // Create a dedicated axios instance for Chat service
 // Chat service runs on port 8000 independently
-const CHAT_SERVICE_URL = 'http://localhost:8000';
+const CHAT_SERVICE_URL = import.meta.env.VITE_API_AI_CHAT_SERVICE_URL || 'http://localhost:8000';
 const chatApiClient: AxiosInstance = axios.create({
   baseURL: CHAT_SERVICE_URL,
   timeout: 10000,
-  withCredentials: true, // Enable cookies for JWT authentication
+  withCredentials: true, 
   headers: {
     'Content-Type': 'application/json',
   },

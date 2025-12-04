@@ -9,7 +9,7 @@ import {
 } from '../../../../../components/common/dialog';
 import Button from '../../../../../components/common/button';
 import { AlertTriangle, Trash2 } from 'lucide-react';
-import type { Reagent } from '../../../types/Reagent';
+import type { Reagent } from '@/pages/labuser/types/Reagent';
 import { useTranslation } from 'react-i18next';
 
 interface ReagentDeleteConfirmModalProps {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/common/dialog';
-import type { TestResult } from '@/pages/labuser/types/TestResultTypes';
+import type { TestResult, TestResultDetail } from '@/pages/labuser/types/TestResultTypes';
 import { Label } from '@/components/common/label';
 
 interface TestResultDetailModalProps {
@@ -76,7 +76,7 @@ const TestResultDetailModal: React.FC<TestResultDetailModalProps> = ({ isOpen, o
                   </tr>
                 </thead>
                 <tbody>
-                  {testResult.results.map((result, index) => (
+                  {testResult.results.map((result: TestResultDetail, index: number) => (
                     <tr key={result.testItemId} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="py-3 px-4 text-sm text-gray-900">{index + 1}</td>
                       <td className="py-3 px-4 text-sm text-gray-900">{result.name}</td>

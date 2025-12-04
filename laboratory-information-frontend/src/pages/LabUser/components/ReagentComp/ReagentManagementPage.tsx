@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import type { Reagent } from '../../types/Reagent';
+import type { Reagent } from '@/pages/labuser/types/Reagent';
 import { useAuthContext } from '../../../../hooks/useAuthContext';
 import { reagentService } from '../../../../service/reagentService';
 import { toast } from 'sonner';
-import ReagentToolbar from './ReagentToolbar';
-import ReagentTable from './ReagentTable';
+import ReagentToolbar from '@/pages/labuser/components/ReagentComp/ReagentToolbar';
+import ReagentTable from '@/pages/labuser/components/ReagentComp/ReagentTable';
 import ReagentAddModal from '../modals/ReagentModal/ReagentAddModal';
 import ReagentEditModal from '../modals/ReagentModal/ReagentEditModal';
 import ReagentDetailModal from '../modals/ReagentModal/ReagentDetailModal';

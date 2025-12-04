@@ -55,7 +55,7 @@ const TestOrderList: React.FC<TestOrderListProps> = ({
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-2">
                       <h4 className="font-mono text-xs sm:text-sm truncate">{order.barcode || order._id}</h4>
-                      {getStatusBadge(order.status)}
+                      {getStatusBadge(order.status, t)}
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-sm text-gray-600">
                       <p className="truncate">{t('testOrder.patient')}: <span className="text-gray-900 font-medium">{order.patient_name}</span></p>
