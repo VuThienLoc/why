@@ -35,7 +35,15 @@ const authenticateUser = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const token = req.cookies.accessToken;
+    let token = req.cookies.accessToken;
+
+    if (!token && req.headers.authorization) {
+      const authHeader = req.headers.authorization;
+      if (authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+      }
+    }
+    
     if (!token) {
       res.status(401).json({ message: "Not authorized, no token" });
       return;
