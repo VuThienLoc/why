@@ -40,34 +40,78 @@ export function GoogleCallbackPage() {
 
     const tryProcessCallback = async (): Promise<boolean> => {
       try {
+        // Ưu tiên đọc dữ liệu từ URL hash (do backend redirect với hash)
+        const rawHash = window.location.hash.startsWith('#')
+          ? window.location.hash.slice(1)
+          : window.location.hash;
+
+        if (rawHash) {
+          const hashParams = new URLSearchParams(rawHash);
+          const userJson = hashParams.get('user');
+          const accessToken = hashParams.get('accessToken');
+          const refreshToken = hashParams.get('refreshToken');
+
+          if (userJson) {
+            try {
+              const parsedUser = JSON.parse(userJson);
+
+              const user: User = {
+                id: parsedUser.id,
+                name: parsedUser.fullName,
+                email: parsedUser.email,
+                role: Array.isArray(parsedUser.role)
+                  ? parsedUser.role
+                  : [parsedUser.role],
+                active: true,
+                permissions: [],
+              };
+
+              // Lưu token nếu có (có thể dùng cho Bearer token tới các service khác)
+              if (accessToken) {
+                localStorage.setItem('accessToken', accessToken);
+              }
+              if (refreshToken) {
+                localStorage.setItem('refreshToken', refreshToken);
+              }
+
+              onLogin(user);
+
+              const redirectTo = getRedirectPathByRole(user.role);
+              navigate(redirectTo);
+
+              processed = true;
+              return true;
+            } catch (parseErr) {
+              console.error('Failed to parse user from hash:', parseErr);
+              // fall through to query-param based handling below
+            }
+          }
+        }
+
         const urlParams = new URLSearchParams(window.location.search);
         const responseData = urlParams.get('data');
 
         if (responseData) {
-          // Parse response data từ URL
+          // Parse response data từ URL (?data=...)
           const parsedData = JSON.parse(decodeURIComponent(responseData));
-    
-          // Xử lý user data
+
           const user = handleGoogleCallbackFromData(parsedData);
 
           if (user) {
-            // Đăng nhập user
             onLogin(user);
 
-            // Redirect dựa trên role
             const redirectTo = getRedirectPathByRole(user.role);
             navigate(redirectTo);
 
             processed = true;
             return true;
           } else {
-            // parsing succeeded but payload invalid => treat as final failure
             setError('Không thể xử lý thông tin đăng nhập');
             return false;
           }
         }
 
-        // Nếu không có data, kiểm tra code/state
+        // Nếu không có data, kiểm tra code/state và gọi backend JSON API
         const code = urlParams.get('code');
         const state = urlParams.get('state');
 

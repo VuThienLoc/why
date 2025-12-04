@@ -105,7 +105,7 @@ const googleCallback = (
           }
         }
 
-        const frontendUrl = new URL(`${process.env.FRONTEND_URL}/auth/callback`);
+        const frontendUrl = new URL(`${process.env.FRONTEND_URL}/auth/google/callback`);
         frontendUrl.hash = new URLSearchParams({
           accessToken: accessToken,
           refreshToken: refreshToken,
