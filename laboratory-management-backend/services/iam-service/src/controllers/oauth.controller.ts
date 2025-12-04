@@ -105,20 +105,21 @@ const googleCallback = (
           }
         }
 
-        res.status(200).json({
-          accessToken,
-          refreshToken,
-          message: "Google login successful!",
-          user: {
+        const frontendUrl = new URL(`${process.env.FRONTEND_URL}/auth/callback`);
+        frontendUrl.hash = new URLSearchParams({
+          token: accessToken,
+          refreshToken: refreshToken,
+          user: JSON.stringify({
             id: user._id,
             email: user.email,
             fullName: user.fullName,
             role: user.role,
             provider: user.provider || "google",
             avatar: user.avatar,
-          },
-          redirectTo: returnTo,
-        });
+          })
+        }).toString();
+
+        res.redirect(frontendUrl.toString());
       } catch (error) {
         console.error("Error in Google callback:", error);
         next(error);
