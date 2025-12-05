@@ -19,7 +19,10 @@ export class EmailService {
       if (!user) throw new AppError(400, "User with given email doesn't exist");
 
       const dedicatedToken = jwt.sign(
-        { userId: user._id, changedDate: user.lastResetPassword?.getTime() ?? 0 },
+        {
+          userId: user._id,
+          changedDate: user.lastResetPassword?.getTime() ?? 0,
+        },
         process.env.JWT_SECRET_KEY as string,
         { expiresIn: process.env.JWT_EXPIRY } as SignOptions
       );
@@ -37,7 +40,7 @@ export class EmailService {
 
       const now = Date.now();
       const lastRequestTime = recentResetRequests.get(token);
-      if (lastRequestTime && (now - lastRequestTime) < RESET_REQUEST_COOLDOWN) {
+      if (lastRequestTime && now - lastRequestTime < RESET_REQUEST_COOLDOWN) {
         console.log("Duplicate password reset request detected, ignoring");
         return;
       }
