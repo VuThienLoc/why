@@ -32,7 +32,7 @@ const createApiClient = (): AxiosInstance => {
 
   // Gửi token trong Authorization header nếu có trong localStorage
   client.interceptors.request.use(config => {
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem('authToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
