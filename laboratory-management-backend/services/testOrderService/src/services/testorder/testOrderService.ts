@@ -243,6 +243,10 @@ export const TestOrderService = {
   async countOrders(filter = {}) {
     return TestOrderRepository.count(filter);
   },
+  async countOrdersByStatus(status: string) {
+    return TestOrderRepository.count({ status, is_deleted: false });
+  },
+
 
   // Lấy Test Order theo ID
   async getOrderById(id: string) {

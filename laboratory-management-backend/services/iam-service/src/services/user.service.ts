@@ -44,6 +44,7 @@ export interface UpdateUserData {
   address?: string;
   role?: string[];
   lastPasswordChange?: Date;
+  lastResetPassword?: Date;
   isActive?: boolean;
   avatar?: string;
 }

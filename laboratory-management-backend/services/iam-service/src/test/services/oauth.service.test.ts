@@ -4,6 +4,7 @@ import {
   type CreateOAuthUserData,
 } from "../../services/oauth.service.js";
 import * as RepositoryIndex from "../../repositories/index.js";
+import { UserService } from "../../services/user.service.js";
 
 const oauthUser = {
   _id: "U-0001",
@@ -50,25 +51,27 @@ describe("OAuthService - createOAuthUser", () => {
       avatar: "https://example.com/new-avatar.jpg",
     };
 
-    const newUserData = {
+    const expectedCreatedUser = {
       ...oauthData,
       identityNumber: expect.stringMatching(/^OAUTH_google_\d+_[a-f0-9]{8}$/),
-      role: "USER",
-      isActive: true,
-      isDeleted: false,
+      role: ["USER"],
+      avatar: oauthData.avatar,
     };
 
+    // 1) No user by providerId
     const findProviderMock = vi
       .spyOn(RepositoryIndex.userRepository, "findOne")
-      .mockResolvedValue(null);
+      .mockResolvedValueOnce(null);
 
+    // 2) No local user by email
     const findEmailMock = vi
       .spyOn(RepositoryIndex.userRepository, "findOne")
-      .mockResolvedValue(null);
+      .mockResolvedValueOnce(null);
 
-    const createMock = vi
-      .spyOn(RepositoryIndex.userRepository, "create")
-      .mockResolvedValue({ _id: "U-0003", ...newUserData } as any);
+    // 3) Create via UserService
+    const createUserMock = vi
+      .spyOn(UserService.prototype, "createUser")
+      .mockResolvedValue({ _id: "U-0003", ...expectedCreatedUser } as any);
 
     const result = await oauthService.createOAuthUser(oauthData);
 
@@ -76,27 +79,24 @@ describe("OAuthService - createOAuthUser", () => {
       provider: "google",
       providerId: "google-new-123",
     });
-
     expect(findEmailMock).toHaveBeenCalledWith({
       email: "newuser@example.com",
       provider: "local",
     });
 
-    expect(createMock).toHaveBeenCalledWith(
+    expect(createUserMock).toHaveBeenCalledWith(
       expect.objectContaining({
         email: "newuser@example.com",
         fullName: "New User",
         provider: "google",
         providerId: "google-new-123",
         avatar: "https://example.com/new-avatar.jpg",
-        role: "USER",
-        isActive: true,
-        isDeleted: false,
+        role: ["USER"],
         identityNumber: expect.stringMatching(/^OAUTH_google_\d+_[a-f0-9]{8}$/),
       })
     );
 
-    expect(result).toEqual({ _id: "U-0003", ...newUserData });
+    expect(result).toEqual({ _id: "U-0003", ...expectedCreatedUser });
   });
 
   it("should return existing OAuth user when found", async () => {

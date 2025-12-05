@@ -247,6 +247,7 @@ describe("Auth E2E - POST /api/login", () => {
     vi.spyOn(JwtUtil, "generateJWT").mockImplementation((res: any) => {
       res.cookie("accessToken", "fake", { httpOnly: true });
       res.cookie("refreshToken", "fake", { httpOnly: true });
+      return { accessToken: "fake", refreshToken: "fake" } as any;
     });
     vi.spyOn(UserService.prototype, "updateUserInternal").mockResolvedValue({} as any);
 

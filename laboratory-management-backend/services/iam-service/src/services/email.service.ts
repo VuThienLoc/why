@@ -60,9 +60,11 @@ export class EmailService {
         throw new AppError(400, "Password already changed with current link");
       }
 
+      const nowDate = new Date();
       await userSerivce.updateUser(userFound._id, {
         password: password,
-        lastPasswordChange: new Date(),
+        lastPasswordChange: nowDate,
+        lastResetPassword: nowDate,
       });
 
       recentResetRequests.delete(token);

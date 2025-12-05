@@ -5,7 +5,6 @@ import reagentServiceClient, { Reagent } from "../services/warehouse/reagentServ
 import { TestItem } from "../db/models/TestItem.model.js";
 import { TestResultService } from "../services/testorder/testResultService.js";
 import { Types } from "mongoose";
-import iamServiceClient from "../services/iam/iamServiceClient.js";
 import patientServiceClient from "../services/patient/patientServiceClient.js";
 
 export const getAllTestOrders = async (req: Request, res: Response) => {
@@ -15,10 +14,21 @@ export const getAllTestOrders = async (req: Request, res: Response) => {
     const skip = (page - 1) * limit;
 
     // Lấy tất cả orders chưa bị xóa, sắp xếp theo due_date tăng dần
-    const [orders, total] = await Promise.all([
-      TestOrderService.getAllOrders({ is_deleted: false }, skip, limit, { due_date: 1 }),
+    const [orders, total, pendingCount, processingCount, completedCount] = await Promise.all([
+      TestOrderService.getAllOrders(
+        { is_deleted: false },
+        skip,
+        limit,
+        { due_date: 1 }
+      ),
       TestOrderService.countOrders({ is_deleted: false }),
+
+      // Đếm theo từng trạng thái
+      TestOrderService.countOrdersByStatus("Pending"),
+      TestOrderService.countOrdersByStatus("Processing"),
+      TestOrderService.countOrdersByStatus("Completed"),
     ]);
+
 
     // Chuẩn hóa dữ liệu trả về
     const enrichedOrders = orders.map((order) => ({
@@ -40,6 +50,9 @@ export const getAllTestOrders = async (req: Request, res: Response) => {
     res.json({
       data: enrichedOrders,
       pagination: {
+        pendingCount,
+        processingCount,
+        completedCount,
         total,
         page,
         limit,
@@ -136,7 +149,7 @@ export const getTestOrderById = async (req: Request<{ id: string }>, res: Respon
 export const getAllOrdersGroupedByUserId = async (req: Request, res: Response) => {
   try {
     const user_id = req.query.user_id as string;
-  
+
     // Lấy patient dựa vào user_id
     const patient = await patientServiceClient.getPatientByUserId(user_id);
     if (!patient) {
@@ -150,7 +163,7 @@ export const getAllOrdersGroupedByUserId = async (req: Request, res: Response) =
     const groupOfOnePatientData = await TestOrderService.getOrdersGroupedByOnePatient(
       user_id,
       patient._id,
-      created_at 
+      created_at
     );
 
     if (!groupOfOnePatientData.length) {
