@@ -1,7 +1,9 @@
 import { randomUUID } from "crypto";
 import type { IUser } from "../db/models/User.model.js";
 import { userRepository } from "../repositories/index.js";
+import { UserService } from "./user.service.js";
 
+const userService = new UserService();
 export interface CreateOAuthUserData {
   email: string;
   fullName: string;
@@ -127,12 +129,10 @@ export class OAuthService {
       identityNumber,
       provider: userData.provider,
       providerId: userData.providerId,
-      avatar: userData.avatar,
-      role: "USER",
-      isActive: true,
-      isDeleted: false,
+      avatar: userData.avatar ?? "" ,
+      role: ["USER"],
     };
 
-    return await userRepository.create(newUserData);
+    return await userService.createUser(newUserData);
   }
 }

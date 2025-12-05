@@ -13,19 +13,23 @@ import { logEvent } from "../utils/logging.util.js";
 import { computeChanges } from "../utils/diff.util.js";
 import { AppError } from "../utils/error.util.js";
 import notifServiceClient from "../../../shared/src/notif-service/adapter/notif.adapter.js";
-import { isValidRoleCode } from "../constants/roles.constant.js";
+import { isValidRoleCode, ROLE_CODES } from "../constants/roles.constant.js";
+import patientServiceClient from "./patientService.client.js";
 
 export interface CreateUserData {
   email: string;
   fullName: string;
   identityNumber: string;
-  gender: string;
-  age: number;
-  dateOfBirth: Date;
-  password: string;
-  phoneNumber: string;
-  address: string;
+  gender?: string;
+  age?: number;
+  dateOfBirth?: Date;
+  password?: string;
+  phoneNumber?: string;
+  address?: string;
   role?: string[];
+  provider?: string;
+  providerId?: string;
+  avatar?: string;
 }
 
 export interface UpdateUserData {
@@ -76,7 +80,14 @@ export class UserService {
     if (!userData.role) {
       newUser.role = ["USER"];
     }
+
     const createdUser = await userRepository.create(newUser);
+
+    console.log("[AuthController] Auto-creating patient for user role USER");
+    await patientServiceClient.createPatientForUser(String(createdUser._id), {
+      id: String(createdUser._id),
+      email: createdUser.email,
+    });
 
     await logEvent({
       eventCode: "E_00023",
