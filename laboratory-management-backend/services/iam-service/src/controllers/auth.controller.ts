@@ -72,7 +72,7 @@ const registerUser = async (
       );
     }
 
-    const newUser = await userService.createUser(
+    await userService.createUser(
       {
         email,
         fullName,
@@ -84,7 +84,7 @@ const registerUser = async (
         phoneNumber,
         address,
       },
-      undefined
+      "System"
     );
 
     res.status(200).json({
